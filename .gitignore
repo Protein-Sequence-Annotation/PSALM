@@ -1,0 +1,9 @@
+data/
+data_esm_decoder/
+.DS_Store
+.vscode/
+ProteinBert_dev/
+bash_scripts/logs/
+bash_scripts/wandb/
+environment.yml
+logs/
