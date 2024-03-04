@@ -28,3 +28,6 @@ Co-authored-by: Kumaresh-Krishnan <kum2nan@gmail.com>"
 git push
 
 echo "Joint commit successful."
+
+cd .git
+chmod -R 774 *
