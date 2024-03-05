@@ -80,7 +80,7 @@ Parameters for training loop
 loss_fn = nn.CrossEntropyLoss() ############ Changed for weighted LSTM
 # loss_fn = nn.BCEWithLogitsLoss(reduction='sum')
 optimizer = torch.optim.Adam(classifier.parameters(), lr=0.001) ############### Changed for LSTM continuation!!!!
-scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=1, threshold=0.1) # lower LR if less than 10% decrease
+scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=1, threshold=0.1, threshold_mode="rel") # lower LR if less than 10% decrease
 
 num_epochs = 20
 save_path = Path(f'../data/results/{sys.argv[2]}')
