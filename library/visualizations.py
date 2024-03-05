@@ -136,9 +136,9 @@ def viewSingleClan(shard, seq, results, clan_keys):
     import matplotlib as mpl
     colors = mpl.colormaps.get_cmap('tab20b').resampled(655) # Listed color map vs linear segmented: add .colors at end
 
-    np.random.seed(1)
+    # np.random.seed(1)
     randomizer = np.arange(655)
-    np.random.shuffle(randomizer)
+    # np.random.shuffle(randomizer)
     c_map = {}
 
     for c_idx, i in enumerate(randomizer):
@@ -213,7 +213,7 @@ def viewSingleFam(shard, seq, results, fam_keys):
     import matplotlib as mpl
     colors = mpl.colormaps.get_cmap('tab20b').resampled(19633) # Listed color map vs linear segmented: add .colors at end
 
-    np.random.seed(1)
+    # np.random.seed(1)
     randomizer = np.arange(19632)
     np.random.shuffle(randomizer)
     c_map = {}
