@@ -100,7 +100,10 @@ for epoch in range(num_epochs):
 
     epoch_loss = 0
     
-    for shard in tqdm(range(1, data_utils.num_shards+1) ,total=data_utils.num_shards, desc='Shards completed'):
+    shard_order = np.arange(1,51)
+    np.random.shuffle(shard_order)
+
+    for shard in tqdm(shard_order ,total=data_utils.num_shards, desc='Shards completed'):
 
         hmm_dict = data_utils.parse_shard(shard)
         dataset = data_utils.get_dataset(shard)
