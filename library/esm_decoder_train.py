@@ -28,7 +28,8 @@ mu.set_seeds(seed)
 Instantiate dataset helper object
 """
 length_limit = 4096 # Covers 99.75% sequences
-model_name =  'esm2_t33_650M_UR50D' #'esm2_t36_3B_UR50D'
+model_name =  'esm2_t33_650M_UR50D' 
+# model_name = 'esm2_t36_3B_UR50D'
 num_shards = 50
 data_utils = mu.DataUtils('../data', num_shards, model_name, length_limit, 'train', device)
 data_utils.maps['clan_family_matrix'].to(device)
