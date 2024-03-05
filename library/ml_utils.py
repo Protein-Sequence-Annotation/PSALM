@@ -83,7 +83,7 @@ class DataUtils():
             idx (int): The position of interest
         """
 
-        return self.shard_path / f'{self.mode}_scan' / f'split_{idx}_{self.mode}_ids_full.fasta'
+        return self.shard_path / f'{self.mode}_fasta' / f'split_{idx}_{self.mode}_ids_full.fasta'
 
     def get_dataset(self, idx):
         
@@ -97,7 +97,7 @@ class DataUtils():
             dataset (Dataset): dataset with all sequences in shard
         """
 
-        dataset = FastaBatchedDataset.from_file(self.shard_path / f'{self.mode}_scan' / f'split_{idx}_{self.mode}_ids_full.fasta')
+        dataset = FastaBatchedDataset.from_file(self.shard_path / f'{self.mode}_fasta' / f'split_{idx}_{self.mode}_ids_full.fasta')
 
         return dataset
 
