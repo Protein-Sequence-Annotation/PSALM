@@ -66,7 +66,7 @@ else:
     print('Incorrect Model choice')
     sys.exit(2)
 
-resume = False
+resume = True
 if resume:
     classifier_path = Path(f'../data/results/Fam_Simple_run2/epoch_3.pth')
     classifier.load_state_dict(torch.load(classifier_path))

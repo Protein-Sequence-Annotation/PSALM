@@ -160,43 +160,6 @@ class LinearHead3NormedFamSoft(nn.Module):
         fam_vector = self.fam_predictor(x_concat)  # shape: (L, f)
 
         return fam_vector, clan_vector
-# class FamModel(nn.Module): 
-#     def __init__(self, embed_dim, maps):
-#         super().__init__()
-#         self.d = embed_dim
-#         self.maps = maps
-#         self.c = len(self.maps['clan_idx'].keys()) # number of clans
-#         self.f = len(self.maps['fam_idx'].keys()) # number of families
-#         self.f_list = [0] * self.c
-#         for clan, idx in self.maps["clan_idx"].items():
-#             self.f_list[idx] = len(self.maps["clan_fam"][clan]) # list of number of families in each clan in the order of clan_idx
-        
-#         # LOAD SOME CLAN MODEL HERE AND USE IT TO GET CLAN PREDICTIONS (DONT FREEZE IT)
-#         # self.clan_predictors = 
-#         # For each clan, we create a linear layer that takes an input of size d and produces an output of size f_i (the number of families in the clan).
-#         self.fam_predictors = nn.ModuleList([nn.Linear(d, f_i) for f_i in f])
-
-#     def forward(self, x,x_c):
-#         # x is the input tensor of shape (L, d), where L is the sequence length and d is the embedding dimension.
-#         # x_c is the input tensor of shape (L, c), where c is the number of clans. This is the true clan membership for each position along the sequence (one-hot encoded).
-
-        
-#         # We apply the softmax function to this tensor to get a probability distribution over the clans for each position along the sequence.
-#         clan_vector = F.softmax(self.clan_predictor(x), dim=1)
-
-#         # Apply each fam_predictor to x to predict the family membership within each clan for each position along the sequence.
-#         # The output is a list of tensors, where the i-th tensor is of shape (L, f_i) and represents the predicted family membership within the i-th clan.
-#         # We apply the softmax function to each tensor to get a probability distribution over the families within the corresponding clan for each position along the sequence.
-#         fam_vectors = [F.softmax(fam_predictor(x), dim=1) for fam_predictor in self.fam_predictors]
-
-#         # Combine the predicted clan membership and the predicted family membership within each clan to get the final predicted family membership for each position along the sequence.
-#         # For each position along the sequence and each clan, we multiply the probability of the clan by the probability distribution over the families within the clan.
-#         # We then sum these products over all clans to get a probability distribution over all families for each position along the sequence.
-#         # The output is a tensor of shape (L, f), where f is the total number of families.
-#         fam_vector = sum(cv * fv for cv, fv in zip(clan_vector.t(), fam_vectors))
-
-#         # Return the final predicted family membership and the predicted clan membership.
-#         return fam_vector, clan_vector
     
 class FamModelMoE(nn.Module): 
     def __init__(self, embed_dim, maps, device):
