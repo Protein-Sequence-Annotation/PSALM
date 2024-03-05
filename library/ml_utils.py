@@ -384,7 +384,7 @@ def train_stepFamSimple(data_loader,
 
             # fam_loss = non_idr_loss + 0.05*F.l1_loss(fam_preds, fam_vector_raw)         
 
-            fam_loss = F.cross_entropy(weighted_fam_preds, fam_vector) + 0.05*F.l1_loss(fam_preds, fam_vector_raw)         
+            fam_loss = F.cross_entropy(weighted_fam_preds, fam_vector) #+ 0.05*F.l1_loss(fam_preds, fam_vector_raw)         
 
             batch_loss = batch_loss + fam_loss #loss
 

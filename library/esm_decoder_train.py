@@ -89,7 +89,7 @@ run = wandb.init(project='esm2-linear3',
                  entity='eddy_lab',
                  config={"epochs": num_epochs,
                          "lr": 1e-3,
-                         "Architecture": "Simple Fam w/ non IDR",
+                         "Architecture": "Simple Fam Resume no L1",
                          "dataset": 'Pfam Seed'})
 
 """
@@ -116,7 +116,7 @@ for epoch in range(num_epochs):
                                                   data_utils,
                                                   hmm_dict)
         
-        epoch_loss += shard_loss
+        epoch_loss += (shard_loss / n_batches)
         
         print(f'Epoch {epoch} Shard {shard} Loss {shard_loss / n_batches}')
         wandb.log({'Shard loss': shard_loss / n_batches})
