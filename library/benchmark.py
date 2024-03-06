@@ -1,6 +1,7 @@
 import subprocess
 from Bio import SeqIO
-from Bio import AlignIO
+import pandas as pd
+import csv
 
 hmmfetch_command = "/n/eddy_lab/software/bin/hmmfetch"
 hmmsearch_command = "/n/eddy_lab/software/bin/hmmsearch"
@@ -22,6 +23,10 @@ output_te_fasta = f"{save_path}/temp_te.fasta"
 tr_MMSA = f"{save_path}/train.seed.sto"
 temp_align = f"{save_path}/temp_tr_te.sto"
 temp_alipid = f"{save_path}/temp_alipid.txt"
+
+# Open log file
+with open(f"{save_path}/log.csv", "w") as log_file:
+    writer = csv.writer(log_file)
 
 # For a given family ID
 family_id = "PF10417.12"
@@ -58,3 +63,11 @@ for seq in te_sequences:
     # get alipid for the alignment
     with open(temp_alipid, "w") as f:
         subprocess.run([alipid_command, temp_align], stdout=f)
+
+    # Retrieve the max pid from the alipid file
+    df = pd.read_csv(temp_alipid, sep="\s+", usecols=[0, 1, 2], names = ["seq1","seq2","pid"],header=0)
+    subset_df = df[(df['seq1'] == seq.id) | (df['seq2'] == seq.id)]
+    max_pid = subset_df['pid'].max()
+
+    # Log <seq_id, domain, family_pid>
+    writer.writerow([seq.id, family_id, max_pid])
