@@ -35,7 +35,7 @@ with open(f"{save_path}/log.csv", "w") as log_file:
     # Get list of family IDs
     with open(f"{save_path}"+"/../maps.pkl", "rb") as f:
         maps = pickle.load(f)
-    family_ids = list(maps.keys())
+    family_ids = list(maps['fam_idx'].keys())
 
     # Iterate through each family
     for family_id in tqdm(family_ids):
