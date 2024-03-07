@@ -56,28 +56,40 @@ with open(f"{save_path}/log.csv", "w") as log_file:
 
         # Take each sequence from test and gets its max pid with train
         tr_sequences = list(SeqIO.parse(output_tr_fasta, "fasta"))
-        te_sequences = SeqIO.parse(output_te_fasta, "fasta")
-        for seq in te_sequences:
-            # Write all of train and a single test sequence to a file
-            filename = f"{save_path}/tmp_{seq.id.replace('/', '_')}.fasta"
-            with open(filename, "w+") as f:
-                SeqIO.write(tr_sequences, f, "fasta") 
-                SeqIO.write(seq, f, "fasta")
+        te_sequences = list(SeqIO.parse(output_te_fasta, "fasta"))
+        # for seq in te_sequences:
+        #     # Write all of train and a single test sequence to a file
+        filename = f"{save_path}/tmp_{seq.id.replace('/', '_')}.fasta"
+        with open(filename, "w+") as f:
+            SeqIO.write(tr_sequences, f, "fasta") 
+            SeqIO.write(te_sequences, f, "fasta")
             
-            # hmmalign the file to the corresponding profile hmm
-            subprocess.run([align_command, "-o", tmp_align, output_hmm, filename])
+        # hmmalign the file to the corresponding profile hmm
+        subprocess.run([align_command, "-o", tmp_align, output_hmm, filename])
 
-            # get alipid for the alignment
-            with open(tmp_alipid, "w") as f:
-                subprocess.run([alipid_command, tmp_align], stdout=f)
+        # get alipid for the alignment
+        with open(tmp_alipid, "w") as f:
+            subprocess.run([alipid_command, tmp_align], stdout=f)
 
-            # Retrieve the max pid from the alipid file
-            df = pd.read_csv(tmp_alipid, sep="\s+", usecols=[0, 1, 2], names = ["seq1","seq2","pid"],header=0)
-            subset_df = df[(df['seq1'] == seq.id) | (df['seq2'] == seq.id)]
-            max_pid = subset_df['pid'].max()
+        # Retrieve the max pid from the alipid file
+        df = pd.read_csv(tmp_alipid, sep="\s+", usecols=[0, 1, 2], names = ["seq1","seq2","pid"],header=0)
 
-            # Log <seq_id, domain, family_pid>
-            writer.writerow([seq.id, family_id, max_pid])
+        # Subset where one of the sequences is from train and the other from test
+        subset_df1 = df[(df['seq1'].isin(tr_sequences)) & (df['seq2'].isin(te_sequences))]
+        subset_df2 = df[(df['seq1'].isin(te_sequences)) & (df['seq2'].isin(tr_sequences))]
+
+        subset_df1 = subset_df1[['seq2', 'pid']]
+        subset_df2 = subset_df2[['seq1', 'pid']]
+        concat_df = pd.concat([subset_df1, subset_df2], ignore_index=True)
+        '''
+        FIX THIS PART AND CHECK COLUMN NAMES FOR CONCAT_DF
+        '''
+        # Get the max pid for each sequence
+        max_pid = concat_df.groupby('seq2')['pid'].max().max()
+        max_pid = subset_df1['pid'].max()
+
+        # Log <seq_id, domain, max_pid>
+        writer.writerow([seq.id, family_id, max_pid])
 
         # Remove tmp files from save_path
         tmp_files = glob.glob(f"{save_path}/tmp*")
