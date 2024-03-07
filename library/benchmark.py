@@ -113,6 +113,7 @@ with open(f"{save_path}/log.csv", "w") as log_file:
         # Write each sequence and its max pid to the log csv
         for index, row in grouped_df.iterrows():
             writer.writerow([row['seq'], family_id, row['pid']])
+        log_file.flush()
 
         # Remove tmp files from save_path
         tmp_files = glob.glob(f"{save_path}/tmp*")
