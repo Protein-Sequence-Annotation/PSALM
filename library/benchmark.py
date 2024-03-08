@@ -12,13 +12,13 @@ hmmsearch_command = "/n/eddy_lab/software/bin/hmmsearch"
 reformat_command = "/n/eddy_lab/software/bin/esl-reformat"
 align_command = "/n/eddy_lab/software/bin/hmmalign"
 alipid_command = "/n/eddy_lab/software/bin/esl-alipid"
-incE = str(0.001) #0.001
+incE = str(0.00005) #0.001
 
 hmm_db = "/n/eddy_lab/data/pfam-35.0/Pfam-A.hmm"
 train_db = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/train_fasta/train_ids_full.fasta"
 test_db = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/test_fasta/test_ids_full.fasta"
 
-save_path = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/benchmarking"
+save_path = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/benchmarking2"
 output_hmm = f"{save_path}/tmp.hmm"
 output_tr_sto = f"{save_path}/tmp_tr_msa.sto"
 output_te_sto = f"{save_path}/tmp_te_msa.sto"
@@ -35,7 +35,7 @@ with open(f"{save_path}/log.csv", "w") as log_file:
     # Get list of family IDs
     with open(f"{save_path}"+"/../maps.pkl", "rb") as f:
         maps = pickle.load(f)
-    family_ids = list(maps['fam_idx'].keys())
+    family_ids = list(maps['fam_idx'].keys())[:-1] #ignore the IDR key
 
     # Iterate through each family
     for family_id in tqdm(family_ids):
