@@ -19,6 +19,12 @@
 # # Print the maximum %id
 # print(max_id)
 
+# alipid
+# /n/eddy_lab/software/bin/esl-alipid data/train_test_splitting/align.sto > data/train_test_splitting/alipid.txt
+
+# phmmer
+# /n/eddy_lab/software/bin/phmmer --incE 0.001 -A data/train_test_splitting/align.sto data/train_test_splitting/query.fasta data/train_test_splitting/combo.fasta 
+
 '''
 1. Select query
 2. Insert query into train
