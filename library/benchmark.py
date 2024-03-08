@@ -1,5 +1,7 @@
 import subprocess
 from Bio import SeqIO, SearchIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 import pandas as pd
 import pickle
 import csv
@@ -17,10 +19,41 @@ incE = str(0.001) #0.001 #0.00005
 bitscore_threshold = 30
 
 hmm_db = "/n/eddy_lab/data/pfam-35.0/Pfam-A.hmm"
-train_db = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/train_fasta/train_ids_full.fasta"
-test_db = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/test_fasta/test_ids_full.fasta"
+# train_db = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/train_fasta/train_ids_full.fasta"
+# test_db = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/test_fasta/test_ids_full.fasta"
+train_csv = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/processing/train_df_1110897_0.25.csv"
+test_csv = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/processing/test_df_1110897_0.25.csv"
+train_db = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/processing/train_df_1110897_0.25.fasta"
+test_db = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/processing/test_df_1110897_0.25.fasta"
 
-save_path = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/benchmarking"
+# Load the train and test databases
+train_df = pd.read_csv(train_csv)
+test_df = pd.read_csv(test_csv)
+
+# Select the desired columns
+train_df = train_df[["Sequence", "ID"]].copy()
+test_df = test_df[["Sequence", "ID"]].copy()
+
+# Split the original third column on space and keep only the part before the space
+train_df["ID"] = train_df["ID"].str.split(' ').str[0]
+test_df["ID"] = test_df["ID"].str.split(' ').str[0]
+
+# Convert the train and test DataFrames to lists of SeqRecord objects
+train_records = [SeqRecord(Seq(row['Sequence']), id=row['ID'] + '_' + str(i+1)) for i, row in train_df.iterrows()]
+test_records = [SeqRecord(Seq(row['Sequence']), id=row['ID'] + '_' + str(i+1+len(train_df))) for i, row in test_df.iterrows()]
+
+# Write the lists of SeqRecord objects to FASTA files
+SeqIO.write(train_records, train_db, 'fasta')
+SeqIO.write(test_records, test_db, 'fasta')
+
+# Write the lists of SeqRecord objects to FASTA files
+SeqIO.write(train_records, train_db, 'fasta')
+SeqIO.write(test_records, test_db, 'fasta')
+
+# pdb.set_trace()
+
+# save_path = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/benchmarking"
+save_path = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/benchmarking_domains"
 output_hmm = f"{save_path}/tmp.hmm"
 output_tr_sto = f"{save_path}/tmp_tr_msa.sto"
 output_te_sto = f"{save_path}/tmp_te_msa.sto"
@@ -68,17 +101,23 @@ with open(f"{save_path}/log.csv", "w") as log_file:
         te_high_score_hits = []
         for query in SearchIO.parse(output_te_domtbl, 'hmmsearch3-domtab'):
             for hit in query.hits:
-                for hsp in hit.hsps:
-                    if hsp.evalue <= float(incE) and hsp.bitscore >= bitscore_threshold:
-                        te_high_score_hits.append(f"{hit.id}/{hsp.hit_start+1}-{hsp.hit_end}")
+                # for hsp in hit.hsps:
+                    # if hsp.evalue <= float(incE) and hsp.bitscore >= bitscore_threshold:
+                    #     te_high_score_hits.append(f"{hit.id}/{hsp.hit_start+1}-{hsp.hit_end}")
+                # Find the hsp with the smallest evalue
+                best_hsp = min(hit.hsps, key=lambda hsp: hsp.evalue)
+                te_high_score_hits.append(f"{hit.id}/{best_hsp.hit_start+1}-{best_hsp.hit_end}")
 
         # Open the train domain table file and extract the IDs of the hits that have a bitscore > 30
         tr_high_score_hits = []
         for query in SearchIO.parse(output_tr_domtbl, 'hmmsearch3-domtab'):
             for hit in query.hits:
-                for hsp in hit.hsps:
-                    if hsp.evalue <= float(incE) and hsp.bitscore >= bitscore_threshold:
-                        tr_high_score_hits.append(f"{hit.id}/{hsp.hit_start+1}-{hsp.hit_end}")
+                # for hsp in hit.hsps:
+                    # if hsp.evalue <= float(incE) and hsp.bitscore >= bitscore_threshold:
+                    #     tr_high_score_hits.append(f"{hit.id}/{hsp.hit_start+1}-{hsp.hit_end}")
+                # Find the hsp with the smallest evalue
+                best_hsp = min(hit.hsps, key=lambda hsp: hsp.evalue)
+                tr_high_score_hits.append(f"{hit.id}/{best_hsp.hit_start+1}-{best_hsp.hit_end}")
         
         # reformat train and test stocholm files to fasta format
         try:
