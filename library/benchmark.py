@@ -1,27 +1,31 @@
 import subprocess
-from Bio import SeqIO
+from Bio import SeqIO, SearchIO
 import pandas as pd
 import pickle
 import csv
 import os
 import glob
 from tqdm import tqdm
+# import pdb
 
 hmmfetch_command = "/n/eddy_lab/software/bin/hmmfetch"
 hmmsearch_command = "/n/eddy_lab/software/bin/hmmsearch"
 reformat_command = "/n/eddy_lab/software/bin/esl-reformat"
 align_command = "/n/eddy_lab/software/bin/hmmalign"
 alipid_command = "/n/eddy_lab/software/bin/esl-alipid"
-incE = str(0.00005) #0.001
+incE = str(0.001) #0.001 #0.00005
+bitscore_threshold = 30
 
 hmm_db = "/n/eddy_lab/data/pfam-35.0/Pfam-A.hmm"
 train_db = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/train_fasta/train_ids_full.fasta"
 test_db = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/test_fasta/test_ids_full.fasta"
 
-save_path = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/benchmarking2"
+save_path = "/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/benchmarking"
 output_hmm = f"{save_path}/tmp.hmm"
 output_tr_sto = f"{save_path}/tmp_tr_msa.sto"
 output_te_sto = f"{save_path}/tmp_te_msa.sto"
+output_tr_domtbl = f"{save_path}/tmp_tr_domtbl.txt"
+output_te_domtbl = f"{save_path}/tmp_te_domtbl.txt"
 output_tr_fasta = f"{save_path}/tmp_tr.fasta"
 output_te_fasta = f"{save_path}/tmp_te.fasta"
 tr_MMSA = f"{save_path}/train.seed.sto"
@@ -40,6 +44,7 @@ with open(f"{save_path}/log.csv", "w") as log_file:
     # Iterate through each family
     for family_id in tqdm(family_ids):
         # family_id = "PF10417.12"
+        # family_id = "PF00008.30"
 
         # hmmfetch profile for selected family
         try:
@@ -49,15 +54,31 @@ with open(f"{save_path}/log.csv", "w") as log_file:
         
         # hmmsearch profile against test database and return MSA of hits      
         try:
-            subprocess.run([hmmsearch_command, "-A", output_te_sto, "--incE", incE, output_hmm, test_db], stdout=subprocess.DEVNULL, check=True)
+            subprocess.run([hmmsearch_command, "-A", output_te_sto, "--incE", incE, "--domtblout", output_te_domtbl, output_hmm, test_db], stdout=subprocess.DEVNULL, check=True)
         except subprocess.CalledProcessError:
             print(f"Error searching {family_id} hmm against test database")
-
+        
         # hmmsearch profile against training database and return MSA of hits
         try:
-            subprocess.run([hmmsearch_command, "-A", output_tr_sto, "--incE", incE, output_hmm, train_db], stdout=subprocess.DEVNULL, check=True)
+            subprocess.run([hmmsearch_command, "-A", output_tr_sto, "--incE", incE, "--domtblout", output_tr_domtbl, output_hmm, train_db], stdout=subprocess.DEVNULL, check=True)
         except subprocess.CalledProcessError:
             print(f"Error searching {family_id} hmm against train database")
+        
+        # Open the test domain table file and extract the IDs of the hits that have a bitscore > 30
+        te_high_score_hits = []
+        for query in SearchIO.parse(output_te_domtbl, 'hmmsearch3-domtab'):
+            for hit in query.hits:
+                for hsp in hit.hsps:
+                    if hsp.evalue <= float(incE) and hsp.bitscore >= bitscore_threshold:
+                        te_high_score_hits.append(f"{hit.id}/{hsp.hit_start+1}-{hsp.hit_end}")
+
+        # Open the train domain table file and extract the IDs of the hits that have a bitscore > 30
+        tr_high_score_hits = []
+        for query in SearchIO.parse(output_tr_domtbl, 'hmmsearch3-domtab'):
+            for hit in query.hits:
+                for hsp in hit.hsps:
+                    if hsp.evalue <= float(incE) and hsp.bitscore >= bitscore_threshold:
+                        tr_high_score_hits.append(f"{hit.id}/{hsp.hit_start+1}-{hsp.hit_end}")
         
         # reformat train and test stocholm files to fasta format
         try:
@@ -72,8 +93,11 @@ with open(f"{save_path}/log.csv", "w") as log_file:
         # Take each sequence from test and gets its max pid with train
         tr_sequences = list(SeqIO.parse(output_tr_fasta, "fasta"))
         te_sequences = list(SeqIO.parse(output_te_fasta, "fasta"))
-        # for seq in te_sequences:
-        #     # Write all of train and a single test sequence to a file
+
+        # Remove sequences are not in high_score_hits
+        te_sequences = [seq for seq in te_sequences if seq.id in te_high_score_hits]
+        tr_sequences = [seq for seq in tr_sequences if seq.id in tr_high_score_hits]
+
         filename = f"{save_path}/tmp_{family_id}.fasta"
         with open(filename, "w+") as f:
             SeqIO.write(tr_sequences, f, "fasta") 
