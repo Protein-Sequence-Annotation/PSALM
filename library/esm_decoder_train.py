@@ -71,7 +71,7 @@ else:
 
 resume = False
 if resume:
-    classifier_path = Path(f'../data/results/Fam_Simple_run2/epoch_3.pth')
+    classifier_path = Path(f'../data/results/simple_resume_no_L1/epoch_4.pth')
     classifier.load_state_dict(torch.load(classifier_path))
 
 """
@@ -80,21 +80,21 @@ Parameters for training loop
 
 loss_fn = nn.CrossEntropyLoss() ############ Changed for weighted LSTM
 # loss_fn = nn.BCEWithLogitsLoss(reduction='sum')
-optimizer = torch.optim.Adam(classifier.parameters(), lr=0.001) ############### Changed for LSTM continuation!!!!
-scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=1, threshold=0.1, threshold_mode="rel") # lower LR if less than 10% decrease
+optimizer = torch.optim.Adam(classifier.parameters(), lr=0.00001) ############### Changed for LSTM continuation!!!!
+# scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=0.1, threshold_mode="rel") # lower LR if less than 10% decrease
 
-num_epochs = 20
+num_epochs = 5
 save_path = Path(f'../data/results/{sys.argv[2]}')
 os.makedirs(save_path, exist_ok=True)
 
 """
 Initialize wandb
 """
-run = wandb.init(project='LabMeeting_3_26', 
+run = wandb.init(project='esm2-linear3', 
                  entity='eddy_lab',
                  config={"epochs": num_epochs,
                          "lr": 1e-3,
-                         "Architecture": "Clan LSTM",
+                         "Architecture": "resume no_l1 part2",
                          "dataset": 'Pfam Seed'})
 
 """
@@ -116,7 +116,7 @@ for epoch in range(num_epochs):
 
         data_loader = data_utils.get_dataloader(dataset)
 
-        shard_loss, n_batches = mu.train_step(data_loader, ###########################
+        shard_loss, n_batches = mu.train_stepFamSimple(data_loader, ###########################
                                                   classifier,
                                                   loss_fn,
                                                   optimizer,
@@ -134,4 +134,4 @@ for epoch in range(num_epochs):
     wandb.log({'Epoch loss': epoch_loss / data_utils.num_shards, 'Learning rate': optimizer.param_groups[0]['lr']})
 
     torch.save(classifier.state_dict(), save_path / f'epoch_{epoch}.pth')
-    scheduler.step(epoch_loss / data_utils.num_shards)
+    # scheduler.step(epoch_loss / data_utils.num_shards)
