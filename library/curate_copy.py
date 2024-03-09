@@ -3,39 +3,7 @@ from pathlib import Path
 from Bio import SeqIO
 import numpy as np
 from tqdm import tqdm
-
-# # Define the shell command
-# command = f'awk -v query="{query_name}" \'$1 ~ query || $2 ~ query {{print $3}}\' alipid.txt | sort -nr | head -n 1'
-
-# # Run the shell command
-# process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-# output, error = process.communicate()
-
-# # Convert the output to a float
-# max_id = float(output.decode('utf-8').strip())
-
-# # Print the maximum %id
-# print(max_id)
-
-# alipid
-# /n/eddy_lab/software/bin/esl-alipid data/train_test_splitting/align.sto > data/train_test_splitting/alipid.txt
-
-# phmmer
-# /n/eddy_lab/software/bin/phmmer --incE 0.001 -A data/train_test_splitting/align.sto data/train_test_splitting/query.fasta data/train_test_splitting/combo.fasta 
-
-'''
-1. Select query
-2. Insert query into train
-3. phmmer query against train
-4. If query maxpid < 0.25, then insert query into test
-5. remove query from train
-6. Else repeat 2-5 with test
-
-Details for step 4.
-phmmer query with incE of 0.001 against train/test (should include query) and output to alignment
-esl-alipid the resulting alignment
-awk to get the max %id
-'''
+from os import stat
 
 full_seqs_path = Path('../data/train_test_splitting/Pfam_A.seed.full_seqs.fasta')
 save_path = full_seqs_path.parent
@@ -67,10 +35,10 @@ def checkAssignment(record, handle, fpath, threshold):
     """
 
     current_pos = handle.tell() # Store current position of file pointer
-    handle.write(record) # Add the query sequence to the file
+    SeqIO.write(record, handle, 'fasta') # Add the query sequence to the file
 
     with open(query_path, 'w') as query: # Tmp file for query
-        SeqIO.write(record, query)
+        SeqIO.write(record, query, 'fasta')
 
     query_id = record.id # Get name of the query
 
@@ -80,18 +48,24 @@ def checkAssignment(record, handle, fpath, threshold):
     handle.seek(current_pos) # Go to file pointer location before query was added
     handle.truncate() # Truncate file to this position
 
+    # Check if phmmer output file is empty i.e. no hits matching incE found, then return True
+    file_size = stat(phmmer_out_path).st_size
+    
+    if file_size == 0:
+        return True
+
     subprocess.run([alipid_command, phmmer_out_path], stdout=open(alipid_out_path, 'w'), check=True) # Run alipid
 
     # Check any column with query_id, sort by pid and return the max
     pid_extract_command = f'awk -v query="{query_id}" \'$1 ~ query || $2 ~ query {{print $3}}\' {alipid_out_path} | sort -nr | head -n 1'
 
-    # Extract max pid from the alipid output file
+    # Extract max pid across all comparisons involving query from the alipid output file
     pid_output = subprocess.Popen(pid_extract_command, stdout=subprocess.PIPE, shell=True)
     pid_result, _ = pid_output.communicate()
 
     # Convert the output to a float
     max_pid = float(pid_result.decode('utf-8').strip())
-
+    
     # Print the maximum %id
     return max_pid < threshold
 
@@ -107,7 +81,7 @@ def split_seqs(threshold, halt=-1):
 
     with open(full_seqs_path, 'r') as seqs_db:
 
-        num_records = SeqIO.count(seqs_db, "fasta") # Number of sequences
+        num_records =  1104223 # Number of sequences hard coded based on precomputed value
         train_ctr = 0 # Track train sequences
         test_ctr = 0 # Track test seqeuences
 
@@ -116,16 +90,16 @@ def split_seqs(threshold, halt=-1):
         train_file = open(train_path, 'a') # Use append mode because 'w' truncates to 0 length before writing
         test_file = open(test_path, 'a')
 
-        for idx, record in tqdm(enumerate(SeqIO.parse(seqs_db, "fasta"), total=num_records, desc='Sequences Parsed')):
+        for idx, record in tqdm(enumerate(SeqIO.parse(seqs_db, "fasta")), total=num_records, desc='Sequences Parsed'):
 
             if group_idx[idx] == 0: # Inclusion in train
-                if (test_ctr != 0 and checkAssignment(record, test_file, threshold)) or test_ctr == 0:
-                    SeqIO.write(record, train_file) # Write sequence
+                if (test_ctr != 0 and checkAssignment(record, test_file, test_path, threshold)) or test_ctr == 0:
+                    SeqIO.write(record, train_file, 'fasta') # Write sequence
                     train_ctr += 1
 
             else: # Inclusion in test
-                if (train_ctr != 0 and checkAssignment(record, train_file, threshold)) or train_ctr == 0:
-                    SeqIO.write(record, test_file) # Write sequence
+                if (train_ctr != 0 and checkAssignment(record, train_file, train_path, threshold)) or train_ctr == 0:
+                    SeqIO.write(record, test_file, 'fasta') # Write sequence
                     test_ctr += 1
 
             if idx == halt: # For testing puposes, if we want to stop after a certain number sequences
