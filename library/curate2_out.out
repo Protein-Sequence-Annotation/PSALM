@@ -1,0 +1,242 @@
+[0 1 0 0 0 0 0 1 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 1 1 0
+ 0 0 0 0 0 0 1 0 0 0 0 0 0 1 1 1 1 0 1 0 0 0 0 0 0 1 0 0 0 0 1 0 1 1 0 0 1
+ 0 0 1 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0 0
+ 0 1 1 0 1 1 0 1 0 1 1 0 0 0 0 1 1 0 0 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 0 0 0
+ 0 0 1 0 0 0 1 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 1 1 0
+ 0 1 0 0 0 0 1 1 0 0 0 0 1 1 1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0
+ 0 0 0 0 1 0 1 0 1 0 0 0 0 0 0 0 0 0 1 1 1 0 0 1 0 1 1 1 0 0 1 0 0 0 1 0 0
+ 0 0 1 0 0 1 0 0 0 0 0 1 1 1 1 0 0 1 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0
+ 1 0 0 0 0 0 0 0 0 1 0 0 1 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0
+ 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 1 1 0 0
+ 0 0 0 0 0 0 1 0 1 0 0 0 0 1 0 1 0 0 1 1 1 0 0 1 0 1 1 0 1 1 0 1 0 1 0 1 0
+ 0 1 0 0 1 1 0 0 0 0 0 0 1 1 1 0 0 0 0 0 1 0 0 0 1 0 0 0 0 0 1 0 0 0 1 0 0
+ 1 1 1 1 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 1 0 1 0 1 0 1 0 0 1 0 0
+ 0 0 0 0 1 0 0 1 1 0 0 0 0 0 0 0 0 1 1 0 0 0 1 0 0 1 1 1 0 0 0 1 1 0 0 0 1
+ 1 0 0 0 1 1 1 0 0 0 0 1 1 1 1 0 1 1 1 0 0 0 1 0 0 0 0 0 0 0 0 1 0 1 0 0 1
+ 0 0 0 1 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 0 0 0
+ 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 1 0 0 1 0 0 0 0 0 0 0 0 0 0
+ 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0
+ 0 0 0 0 0 1 0 0 0 1 0 0 1 1 1 0 0 0 1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 1 0 1 0 0 1 0 0 0 0 1 1 1 0 0 1 0 0 0 0 1 0 1 0 0 0 1 0 0 0 1 0 1 0 0
+ 0 0 0 0 0 1 0 0 1 0 0 1 0 0 0 1 0 0 1 1 0 0 0 0 0 0 1 1 0 1 0 1 0 0 1 0 0
+ 0 0 0 0 0 0 0 0 1 0 0 0 1 0 0 0 0 0 1 1 0 0 1 0 0 0 0 0 0 1 1 0 0 1 1 0 1
+ 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 1 0 0 0
+ 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0
+ 0 0 0 1 1 0 0 0 0 1 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 1 1 0 1 0 1 1 0
+ 0 0 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1 1 0 0 0 0 1 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 1 0 0 0 0 0 1 0 1
+ 0]
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+C0QE69.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+H6QYX5.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+A1K8U5.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+A0JXY0.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+U5CXB0.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+B3PF02.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+I7HFE6.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+R7AYH0.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+I0RDE7.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+A0LDH9.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+A0A381MCU2.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+G0A0M1.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+D1AYL3.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+A1SB82.1/22-109  A1SB82.1/184-325   0.00      0     88   0.00      0    230
+
+Q7VS67.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+D3VE12.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+U3TUI5.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+D5CM72.1/27-196  D5CM72.1/361-597   0.00      0    170   0.00      0    407
+D5CM72.1/27-196  D5CM72.1/635-661   0.00      0     27   0.00      0    197
+D5CM72.1/361-597 D5CM72.1/635-661   0.00      0     27   0.00      0    264
+
+C1AEB6.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+J9JJR7.2/108-316  J9JJR7.2/349-592    0.00      0    209   0.00      0    453
+J9JJR7.2/108-316  J9JJR7.2/797-1020   0.00      0    209   0.00      0    433
+J9JJR7.2/349-592  J9JJR7.2/797-1020   0.00      0    224   0.00      0    468
+
+A0BIQ8.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+Q7P666.1/37-146  Q7P666.1/580-686   0.00      0    107   0.00      0    217
+
+Q51377.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+Q5XXC0.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+D7BHM4.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+A9VA77.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+B3RJ28.1/156-236 M1FA63.1/24-101   16.67     13     78  82.76     72     87
+
+Q9K8F4.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+B1VAH3.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+R6GFH2.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+N1JC70.1/29-102  N1JC70.1/304-438   0.00      0     74   0.00      0    209
+
+U5LEZ7.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+Q6KZH6.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+R5Q0Z8.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+K0EPH4.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+Q7SA85.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+K0NGU8.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+E3M890.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+F2F386.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+G8ZVU4.1/4-298 A7RG51.1/6-294  44.29    128    289  92.74    281    303
+
+O68031.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+A3JX64.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+F9ULY0.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+Q6L345.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+M2YMY6.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+F4Q1Z3.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+Q6CPI9.1/112-339 Q6CPI9.1/376-411   0.00      0     36   0.00      0    264
+
+U5GY65.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+G0A0Z5.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+M3ZXI2.1/33-981   M3ZXI2.1/969-1039  18.31     13     71   7.48     71    949
+
+Q5AKW2.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+A0A1X7VPC0.1/13-56 Q20798.1/290-336    29.55     13     44  93.62     44     47
+
+C3Y1L1.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+A0A1Y4CST1.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+F6H1I6.1/121-262 F6H1I6.1/306-447   0.00      0    142   0.00      0    284
+
+Q4JL91.3
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+A0A1M6A5C3.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+G2J1J0.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+Q9K8F4.1/10-407  Q7SA85.1/481-513  42.42     14     33   8.02     32    399
+
+W0RPH8.1
+-----------------------------------
+# seqname1 seqname2 %id nid denomid %match nmatch denommatch
+
+F9ZVU0.1
+-----------------------------------
+Sequence splitting completed
+Train: 757 Test: 243

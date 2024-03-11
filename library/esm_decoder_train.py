@@ -69,7 +69,7 @@ else:
     print('Incorrect Model choice')
     sys.exit(2)
 
-resume = False
+resume = True
 if resume:
     classifier_path = Path(f'../data/results/simple_resume_no_L1/epoch_4.pth')
     classifier.load_state_dict(torch.load(classifier_path))
@@ -80,7 +80,7 @@ Parameters for training loop
 
 loss_fn = nn.CrossEntropyLoss() ############ Changed for weighted LSTM
 # loss_fn = nn.BCEWithLogitsLoss(reduction='sum')
-optimizer = torch.optim.Adam(classifier.parameters(), lr=0.00001) ############### Changed for LSTM continuation!!!!
+optimizer = torch.optim.Adam(classifier.parameters(), lr=0.001) ############### Changed for LSTM continuation!!!!
 # scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=0.1, threshold_mode="rel") # lower LR if less than 10% decrease
 
 num_epochs = 5
@@ -94,7 +94,7 @@ run = wandb.init(project='esm2-linear3',
                  entity='eddy_lab',
                  config={"epochs": num_epochs,
                          "lr": 1e-3,
-                         "Architecture": "resume no_l1 part2",
+                         "Architecture": "resume no_l1 part2 lr3",
                          "dataset": 'Pfam Seed'})
 
 """
@@ -106,7 +106,7 @@ for epoch in range(num_epochs):
     epoch_loss = 0
     
     shard_order = np.arange(1,51)
-    np.random.shuffle(shard_order)
+    # np.random.shuffle(shard_order)
 
     for shard in tqdm(shard_order ,total=data_utils.num_shards, desc='Shards completed'):
 
@@ -124,7 +124,7 @@ for epoch in range(num_epochs):
                                                   data_utils,
                                                   hmm_dict)
         
-        epoch_loss += (shard_loss / n_batches)
+        epoch_loss += shard_loss # (shard_loss / n_batches)
         
         print(f'Epoch {epoch} Shard {shard} Loss {shard_loss / n_batches}')
         wandb.log({'Shard loss': shard_loss / n_batches})

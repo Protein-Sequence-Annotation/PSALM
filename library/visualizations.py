@@ -287,5 +287,5 @@ def viewSingleFam(shard, seq, results, fam_keys):
 
 if __name__ == '__main__':
 
-    dpath = Path('../data/results/weighted_lstm_run1/predictions_esm2_t33_650M_UR50D/')
+    dpath = Path('../data/results/try_lstm_part2/predictions_esm2_t33_650M_UR50D')
     clan_accuracies(dpath, False)

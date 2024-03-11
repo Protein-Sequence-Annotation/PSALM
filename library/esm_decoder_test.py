@@ -10,7 +10,7 @@ from torch import nn
 
 import ml_utils as mu
 import classifiers as cf
-import visualizations as vz
+# import visualizations as vz
 
 """
 Set device for execution
@@ -86,7 +86,7 @@ for shard in tqdm(range(1, data_utils.num_shards+1) ,total=data_utils.num_shards
 
     data_loader = data_utils.get_dataloader(dataset)
 
-    shard_preds, n_batches = mu.test_stepFam(data_loader, ###########################
+    shard_preds, n_batches = mu.test_step(data_loader, ###########################
                                                 classifier,
                                                 device,
                                                 data_utils,
