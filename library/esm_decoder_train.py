@@ -39,37 +39,25 @@ Model choice based on user input
 Not implemented as dictionary so that only one model is created
 """
 
-if sys.argv[1] == 'CL1': # Clan - 1 linear head
-    classifier = cf.LinearHead1(data_utils.embedding_dim, data_utils.clan_count).to(device)
-elif sys.argv[1] == 'CL3': # Clan - 3 linear heads
-    classifier = cf.LinearHead3(data_utils.embedding_dim, 2*data_utils.embedding_dim, data_utils.clan_count).to(device)
-elif sys.argv[1] == 'CLN3': # Clan - 3 Linear Norm head
+if sys.argv[1] == 'CLN3': # Clan - 3 Linear Norm head
     classifier = cf.LinearHead3Normed(data_utils.embedding_dim, 2*data_utils.embedding_dim,data_utils.clan_count).to(device)
 elif sys.argv[1] == 'CLN4': # Clan - 4 Linear Norm head
     classifier = cf.LinearHead4Normed(data_utils.embedding_dim, 2*data_utils.embedding_dim,data_utils.clan_count).to(device)
-elif sys.argv[1] == 'FLN3': # Family - 3 Linear Norm head
-    classifier = cf.LinearHead3NormedFam(data_utils.embedding_dim,data_utils.clan_count,data_utils.fam_count,1, attend=False).to(device)
-elif sys.argv[1] == 'FLN3A': # Family - 3 Linear Norm head With Attention
-    classifier = cf.LinearHead3NormedFam(data_utils.embedding_dim,data_utils.clan_count,data_utils.fam_count,1).to(device)
-elif sys.argv[1] == 'FLN3S': # Family - 3 Linear Norm head With Softmax
-    classifier = cf.LinearHead3NormedFamSoft(data_utils.embedding_dim,data_utils.clan_count,data_utils.fam_count).to(device)
-elif sys.argv[1] == 'CLWC': # Clan - Linear Weighted Context
-    classifier = cf.ContextWeightedSum(data_utils.embedding_dim, data_utils.clan_count).to(device)
-elif sys.argv[1] == 'CLC': # Clan - Concatenated Linear
-    classifier = cf.ContextConcatLinear3(data_utils.embedding_dim, data_utils.clan_count).to(device)
 elif sys.argv[1] == 'CMLN3': # Clan - lstM 3 Linear Norm head
-    classifier = cf.TryLSTM(data_utils.embedding_dim,data_utils.clan_count).to(device)
+    classifier = cf.ClanLSTM(data_utils.embedding_dim,data_utils.clan_count).to(device)
 elif sys.argv[1] == 'FamMoE':
     classifier = cf.FamModelMoE(data_utils.embedding_dim, data_utils.maps, device).to(device)
 elif sys.argv[1] == 'FamSimple':
     classifier = cf.FamModelSimple(data_utils.embedding_dim, data_utils.maps, device).to(device)
 elif sys.argv[1] == 'FamMoELSTM':
     classifier = cf.FamModelMoELSTM(data_utils.embedding_dim, data_utils.maps, device).to(device)
+elif sys.argv[1] == 'ClanFamSimple':
+    classifier = cf.ClanFamLSTM(data_utils.embedding_dim, data_utils.clan_count, data_utils.maps, device).to(device)
 else:
     print('Incorrect Model choice')
     sys.exit(2)
 
-resume = True
+resume = False
 if resume:
     classifier_path = Path(f'../data/results/simple_resume_no_L1/epoch_4.pth')
     classifier.load_state_dict(torch.load(classifier_path))
@@ -80,7 +68,7 @@ Parameters for training loop
 
 loss_fn = nn.CrossEntropyLoss() ############ Changed for weighted LSTM
 # loss_fn = nn.BCEWithLogitsLoss(reduction='sum')
-lr = 0.0001
+lr = 0.001
 optimizer = torch.optim.Adam(classifier.parameters(), lr=lr)
 # scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=0.1, threshold_mode="rel") # lower LR if less than 10% decrease
 
@@ -95,7 +83,7 @@ run = wandb.init(project='esm2-linear3',
                  entity='eddy_lab',
                  config={"epochs": num_epochs,
                          "lr": lr,
-                         "Architecture": "no_l1_verify",
+                         "Architecture": "clan_fam",
                          "dataset": 'Pfam Seed'})
 
 """
@@ -107,7 +95,7 @@ for epoch in range(num_epochs):
     epoch_loss = 0
     
     shard_order = np.arange(1,51)
-    # np.random.shuffle(shard_order)
+    np.random.shuffle(shard_order)
 
     for shard in tqdm(shard_order ,total=data_utils.num_shards, desc='Shards completed'):
 
@@ -117,7 +105,7 @@ for epoch in range(num_epochs):
 
         data_loader = data_utils.get_dataloader(dataset)
 
-        shard_loss, n_batches = mu.train_stepFamSimple(data_loader, ###########################
+        shard_loss, n_batches = mu.train_stepClanFamSimple(data_loader, ###########################
                                                   classifier,
                                                   loss_fn,
                                                   optimizer,

@@ -397,6 +397,74 @@ def train_stepFamSimple(data_loader,
 
     return shard_loss, n_batches
 
+def train_stepClanFamSimple(data_loader,
+               classifier,
+               loss_fn,
+               optimizer,
+               device,
+               data_utils,
+               hmm_dict):
+
+    """
+    Runs a train step for one batch
+
+    Args:
+        data_loader (DataLoader): A data loader object with the current dataset
+        classifier (nn.Module): The classifier head to decode esm embeddings
+        loss_fn (nn.Loss): Loss function for the model
+        optimizer (torch.optim.Optimizer): Optimizer for the classifier
+        device (str): GPU / CPU selection
+        data_utils (DataUtils): Member functions and helpers for processing HMM data
+        hmm_dict (Dict): dictionary with parsed results of hmmscan for current shard
+
+    Returns:
+        shard_loss (torch.Float32): loss over the entire shard
+        shard_length (torch.Int): length of all sequences in shard
+    """
+
+    shard_loss = 0
+    n_batches = len(data_loader)
+
+    classifier.train()
+
+    for batch_id, (labels, seqs, tokens) in enumerate(data_loader):
+
+        tokens = tokens.to(device)
+        embedding = data_utils.get_embedding(tokens)
+        
+        batch_loss = torch.zeros(1, requires_grad=True).to(device)
+
+        optimizer.zero_grad()
+        n_seqs = len(labels)
+
+        sequence_labels = [x.split()[0] for x in labels]
+
+        for idx, label in enumerate(sequence_labels):
+
+            fam_vector_raw, clan_vector = hu.generate_domain_position_list2(hmm_dict, label, data_utils.maps)
+            
+            stop_index = min(len(seqs[idx]), data_utils.length_limit)
+            clan_vector = torch.tensor(clan_vector[:stop_index,:]).to(device) # clip the clan_vector to the truncated sequence length
+            fam_vector = np.argmax(fam_vector_raw, axis=1)
+            fam_vector = torch.tensor(fam_vector[:stop_index]).to(device) # clip the fam_vector to the truncated sequence length
+            fam_vector_raw = torch.tensor(fam_vector_raw[:stop_index,:]).to(device) # clip the fam_vector to the truncated sequence length
+
+            # Logits are the raw output of the classifier!!! This should be used for CrossEntropyLoss()
+            clan_preds, weighted_fam_preds, fam_preds = classifier(embedding["representations"][data_utils.last_layer][idx,1:stop_index+1,:])     
+
+            fam_loss = F.cross_entropy(weighted_fam_preds, fam_vector) + 0.05*F.l1_loss(fam_preds, fam_vector_raw) # Can decide L1
+            clan_loss = F.cross_entropy(clan_preds, clan_vector) + 0.05*F.l1_loss(clan_preds, clan_vector) # Can decide L1
+
+            batch_loss = batch_loss + fam_loss + clan_loss # loss for each - check magnitude?
+
+        batch_loss = batch_loss / n_seqs
+        batch_loss.backward()
+        optimizer.step()
+
+        shard_loss += batch_loss.item()
+
+    return shard_loss, n_batches
+
 ###########################################################
 # Test step
 ###########################################################
