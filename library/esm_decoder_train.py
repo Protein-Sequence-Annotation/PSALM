@@ -80,7 +80,8 @@ Parameters for training loop
 
 loss_fn = nn.CrossEntropyLoss() ############ Changed for weighted LSTM
 # loss_fn = nn.BCEWithLogitsLoss(reduction='sum')
-optimizer = torch.optim.Adam(classifier.parameters(), lr=0.001) ############### Changed for LSTM continuation!!!!
+lr = 0.0001
+optimizer = torch.optim.Adam(classifier.parameters(), lr=lr)
 # scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=0.1, threshold_mode="rel") # lower LR if less than 10% decrease
 
 num_epochs = 5
@@ -93,8 +94,8 @@ Initialize wandb
 run = wandb.init(project='esm2-linear3', 
                  entity='eddy_lab',
                  config={"epochs": num_epochs,
-                         "lr": 1e-3,
-                         "Architecture": "resume no_l1 part2 lr3",
+                         "lr": lr,
+                         "Architecture": "no_l1_verify",
                          "dataset": 'Pfam Seed'})
 
 """

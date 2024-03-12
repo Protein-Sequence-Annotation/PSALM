@@ -8,19 +8,19 @@ from os import stat
 
 # awk -F ' ' '{for (i=1; i<=2; i++) {if ($i ~ /\//) {$i=substr($i, 1, index($i, "/")-1)}}} 1' alipid_out.txt
 
-full_seqs_path = Path('../data/train_test_splitting_tmp/death_jhmmer.seqs')
-save_path = Path('../data/train_test_splitting_tmp') # full_seqs_path.parent # for now - until permission is changed on original
+full_seqs_path = Path('../data/train_test_splitting/Pfam_A.seed.full_seqs.fasta')
+save_path = Path('../data/train_test_splitting') # full_seqs_path.parent # for now - until permission is changed on original
 
 phmmer_command = '/n/eddy_lab/software/bin/phmmer'
 alipid_command = '/n/eddy_lab/software/bin/esl-alipid'
 
-train_path = Path('../data/train_test_splitting_tmp/full_train.fasta')
-test_path = Path('../data/train_test_splitting_tmp/full_test.fasta')
-phmmer_out_path = Path('../data/train_test_splitting_tmp/phmmer_out.sto')
-alipid_out_path = Path('../data/train_test_splitting_tmp/alipid_out.txt')
-query_path = Path('../data/train_test_splitting_tmp/query.fasta')
+train_path = Path('../data/train_test_splitting/full_train.fasta')
+test_path = Path('../data/train_test_splitting/full_test.fasta')
+phmmer_out_path = Path('../data/train_test_splitting/phmmer_out.sto')
+alipid_out_path = Path('../data/train_test_splitting/alipid_out.txt')
+query_path = Path('../data/train_test_splitting/query.fasta')
 
-incE = str(0.1)
+incE = str(0.01)
 np.random.seed(42) # That's the only number I know
 
 def checkAssignment(record, handle, fpath, threshold):
@@ -67,20 +67,8 @@ def checkAssignment(record, handle, fpath, threshold):
     pid_result, _ = pid_output.communicate()
     max_pid = pid_result.decode('utf-8').strip()
 
-    # pid2_extract_command = f'awk -v q="{query_id}" \'($1 ~ q || $2 ~ q) && !($1 ~ q && $2 ~ q) {{print $3}}\' {alipid_out_path} | sort -nr'
-    # pid2_extract_command = f'cat {alipid_out_path}'
-    # # Extract max pid across all comparisons involving query from the alipid output file
-    # # pid2_output = subprocess.run(pid2_extract_command, capture_output=True, shell=True, text=True)
-    # pid2_output = subprocess.Popen(pid2_extract_command, stdout=subprocess.PIPE, shell=True)
-    # pid2_result, _ = pid2_output.communicate()
-    # max_pid2 = pid2_result.decode('utf-8')#.strip()
-    # # print(max_pid2)
-    # print(max_pid2)
-    # print(query_id)
-    # print('-----------------------------------')
-
     # Check if alipid output file is empty i.e. best hit was to itself, so not present in output
-    print(max_pid)
+
     if not max_pid:
         return True
 
@@ -112,15 +100,15 @@ def split_seqs(threshold, halt=-1):
                 if (test_ctr != 0 and checkAssignment(record, test_file, test_path, threshold)) or test_ctr == 0:
                     SeqIO.write(record, train_file, 'fasta') # Write sequence
                     train_ctr += 1
-                else:
-                    print('Failed assignment to train')
+                # else:
+                #     print('Failed assignment to train')
 
             else: # Inclusion in test if there are no seqs in train OR assignment is possible
                 if (train_ctr != 0 and checkAssignment(record, train_file, train_path, threshold)) or train_ctr == 0:
                     SeqIO.write(record, test_file, 'fasta') # Write sequence
                     test_ctr += 1
-                else:
-                    print('Failed assignment to test')
+                # else:
+                #     print('Failed assignment to test')
 
             if idx == halt-1: # For testing puposes, if we want to stop after a certain number sequences
                 break
