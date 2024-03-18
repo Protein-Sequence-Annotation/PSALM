@@ -450,6 +450,8 @@ def train_stepClanFamSimple(data_loader,
             fam_vector_raw = torch.tensor(fam_vector_raw[:stop_index,:]).to(device) # clip the fam_vector to the truncated sequence length
 
             # Logits are the raw output of the classifier!!! This should be used for CrossEntropyLoss()
+
+            # Not teacher forcing at the moment - might be dumb, but just interested in seeing output
             clan_preds, weighted_fam_preds, fam_preds = classifier(embedding["representations"][data_utils.last_layer][idx,1:stop_index+1,:])     
 
             fam_loss = F.cross_entropy(weighted_fam_preds, fam_vector) + 0.05*F.l1_loss(fam_preds, fam_vector_raw) # Can decide L1

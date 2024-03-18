@@ -57,9 +57,9 @@ else:
     print('Incorrect Model choice')
     sys.exit(2)
 
-resume = False
+resume = True
 if resume:
-    classifier_path = Path(f'../data/results/simple_resume_no_L1/epoch_4.pth')
+    classifier_path = Path(f'../data/results/Clan_20epoch/epoch_19.pth')
     classifier.load_state_dict(torch.load(classifier_path))
 
 """
@@ -68,22 +68,22 @@ Parameters for training loop
 
 loss_fn = nn.CrossEntropyLoss() ############ Changed for weighted LSTM
 # loss_fn = nn.BCEWithLogitsLoss(reduction='sum')
-lr = 0.001
+lr = 0.0001
 optimizer = torch.optim.Adam(classifier.parameters(), lr=lr)
-# scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=0.1, threshold_mode="rel") # lower LR if less than 10% decrease
+scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=0.1, threshold_mode="rel") # lower LR if less than 10% decrease
 
-num_epochs = 5
+num_epochs = 10
 save_path = Path(f'../data/results/{sys.argv[2]}')
 os.makedirs(save_path, exist_ok=True)
 
 """
 Initialize wandb
 """
-run = wandb.init(project='esm2-linear3', 
+run = wandb.init(project='LabMeeting_3_26', 
                  entity='eddy_lab',
                  config={"epochs": num_epochs,
                          "lr": lr,
-                         "Architecture": "clan_fam",
+                         "Architecture": "clan_long_p2",
                          "dataset": 'Pfam Seed'})
 
 """
@@ -105,7 +105,7 @@ for epoch in range(num_epochs):
 
         data_loader = data_utils.get_dataloader(dataset)
 
-        shard_loss, n_batches = mu.train_stepClanFamSimple(data_loader, ###########################
+        shard_loss, n_batches = mu.train_step(data_loader, ###########################
                                                   classifier,
                                                   loss_fn,
                                                   optimizer,
@@ -123,4 +123,4 @@ for epoch in range(num_epochs):
     wandb.log({'Epoch loss': epoch_loss / data_utils.num_shards, 'Learning rate': optimizer.param_groups[0]['lr']})
 
     torch.save(classifier.state_dict(), save_path / f'epoch_{epoch}.pth')
-    # scheduler.step(epoch_loss / data_utils.num_shards)
+    scheduler.step(epoch_loss / data_utils.num_shards)

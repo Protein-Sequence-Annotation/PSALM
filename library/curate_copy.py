@@ -57,7 +57,7 @@ def checkAssignment(record, handle, fpath, threshold):
     if file_size == 0:
         return True
 
-    subprocess.run([alipid_command, phmmer_out_path], stdout=open(alipid_out_path, 'w'), check=True) # Run alipid
+    subprocess.run([alipid_command, '--amino', phmmer_out_path], stdout=open(alipid_out_path, 'w'), check=True) # Run alipid
 
     # Check for exactly one column with query_id, sort by pid and return the max
     pid_extract_command = f'awk -v q="{query_id}" \'($1 ~ q || $2 ~ q) && !($1 ~ q && $2 ~ q) {{print $3}}\' {alipid_out_path} | sort -nr | head -n 1'
@@ -87,8 +87,8 @@ def split_seqs(threshold, halt=-1):
     with open(full_seqs_path, 'r') as seqs_db:
 
         num_records =  1104223 if halt == -1 else halt # Number of sequences hard coded based on precomputed value
-        train_ctr = 0 # Track train sequences
-        test_ctr = 0 # Track test seqeuences
+        train_ctr = 1 # Track train sequences
+        test_ctr = 1 # Track test seqeuences
 
         group_idx = np.random.choice([0,1], size=num_records, p=[0.75, 0.25]) # 0 - train, 1 - test
         train_file = open(train_path, 'a') # Use append mode because 'w' truncates to 0 length before writing
@@ -96,7 +96,10 @@ def split_seqs(threshold, halt=-1):
 
         for idx, record in tqdm(enumerate(SeqIO.parse(seqs_db, "fasta")), total=num_records, desc='Sequences Parsed'):
 
-            if group_idx[idx] == 0: # Inclusion in train if there are no seqs in test OR assignment is possible
+            if idx < 361962:
+                continue
+
+            elif group_idx[idx] == 0: # Inclusion in train if there are no seqs in test OR assignment is possible
                 if (test_ctr != 0 and checkAssignment(record, test_file, test_path, threshold)) or test_ctr == 0:
                     SeqIO.write(record, train_file, 'fasta') # Write sequence
                     train_ctr += 1
