@@ -34,7 +34,7 @@ def set_seeds(seed):
 
 class DataUtils():
 
-    def __init__(self, shard_path, num_shards, esm_model_name, limit, mode, device):
+    def __init__(self, shard_path, num_shards, esm_model_name, limit, mode, device, alt_suffix=""):
 
         with open(Path(shard_path) / 'maps.pkl', 'rb') as f:
             self.maps = pickle.load(f)
@@ -48,6 +48,7 @@ class DataUtils():
         self.embedding_dim = self.esm_model.embed_dim
         self.length_limit = limit
         self.mode = mode
+        self.alt_suffix = alt_suffix
 
         for param in self.esm_model.parameters():
             param.requires_grad = False
@@ -72,7 +73,7 @@ class DataUtils():
             idx (int): The position of interest
         """
 
-        return self.shard_path / f'{self.mode}_scan' / f'split_{idx}_{self.mode}_ids_full.fasta_scan.txt'
+        return self.shard_path / f'{self.mode}_scan_{self.alt_suffix}' / f'split_{idx}_{self.mode}_ids_full.fasta_scan.txt'
 
     def get_fasta(self, idx: int) -> str:
 
@@ -83,7 +84,7 @@ class DataUtils():
             idx (int): The position of interest
         """
 
-        return self.shard_path / f'{self.mode}_fasta' / f'split_{idx}_{self.mode}_ids_full.fasta'
+        return self.shard_path / f'{self.mode}_fasta_{self.alt_suffix}' / f'split_{idx}_{self.mode}_ids_full.fasta'
 
     def get_dataset(self, idx):
         
@@ -97,7 +98,7 @@ class DataUtils():
             dataset (Dataset): dataset with all sequences in shard
         """
 
-        dataset = FastaBatchedDataset.from_file(self.shard_path / f'{self.mode}_fasta' / f'split_{idx}_{self.mode}_ids_full.fasta')
+        dataset = FastaBatchedDataset.from_file(self.shard_path / f'{self.mode}_fasta_{self.alt_suffix}' / f'split_{idx}_{self.mode}_ids_full.fasta')
 
         return dataset
 
@@ -161,7 +162,7 @@ class DataUtils():
             hmmscan_dict (Dict): A dictionary containing the results of a parsed hmmscan file
         """
 
-        hmmscan_dict = hu.parse_hmmscan_results(self.shard_path / f'{self.mode}_scan' / f'split_{idx}_{self.mode}_ids_full.fasta_scan.txt')
+        hmmscan_dict = hu.parse_hmmscan_results(self.shard_path / f'{self.mode}_scan_{self.alt_suffix}' / f'split_{idx}_{self.mode}_ids_full.fasta_scan.txt')
 
         return hmmscan_dict
 

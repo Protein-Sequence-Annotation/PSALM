@@ -208,9 +208,14 @@ def viewSingleClan(shard, seq, results, clan_keys):
 
     return
 
-def viewSingleFam(shard, seq, results, fam_keys):
-
+def viewSingleFam(shard, seq, results, fam_keys, pid_dict_pkl):
+    
+    # Open the json file
+    with open(f'../data/benchmarking/{pid_dict_pkl}', 'rb') as f:
+        pid_dict = pickle.load(f)
+    
     import matplotlib as mpl
+
     colors = mpl.colormaps.get_cmap('tab20b').resampled(19633) # Listed color map vs linear segmented: add .colors at end
 
     # np.random.seed(1)
@@ -249,7 +254,7 @@ def viewSingleFam(shard, seq, results, fam_keys):
     for entry in unique_target:
         idx = np.where(true==entry)[0]
         # ax1.fill_between(idx, 0,1, color=c_map[entry])
-        ax1.bar(idx, true_vals[idx], width=1.0, color=c_map[entry], label=fam_keys[entry])
+        ax1.bar(idx, true_vals[idx], width=1.0, color=c_map[entry], label=f"{fam_keys[entry]}:\n {pid_dict[seq][fam_keys[entry]]}%")
 
     for entry in unique_test_1:
         idx = np.where(pred1_labels==entry)[0]
