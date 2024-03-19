@@ -13,7 +13,7 @@ import sys
 # Functions for data processing and model creation
 ###########################################################
 
-def set_seeds(seed):
+def set_torch_seeds(seed):
 
     """
     Set all seeds to the same value for reproducibility
@@ -22,7 +22,6 @@ def set_seeds(seed):
         seed (int): An integer that serves as the common seed
     """
 
-    np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
 
@@ -41,7 +40,7 @@ class DataUtils():
         
         self.clan_count = len(self.maps["clan_idx"])
         self.fam_count = len(self.maps["fam_idx"])
-        self.shard_path = Path(shard_path)
+        self.shard_path = Path(shard_path) / f'{self.mode}_scan{self.alt_suffix}'
         self.num_shards = num_shards
         self.esm_model, self.alphabet = pretrained.load_model_and_alphabet(esm_model_name)
         self.last_layer = self.esm_model.num_layers
@@ -49,6 +48,7 @@ class DataUtils():
         self.length_limit = limit
         self.mode = mode
         self.alt_suffix = alt_suffix
+        self.shard
 
         for param in self.esm_model.parameters():
             param.requires_grad = False
@@ -73,7 +73,7 @@ class DataUtils():
             idx (int): The position of interest
         """
 
-        return self.shard_path / f'{self.mode}_scan_{self.alt_suffix}' / f'split_{idx}_{self.mode}_ids_full.fasta_scan.txt'
+        return self.shard_path / f'split_{idx}_{self.mode}_ids_full.fasta_scan.txt'
 
     def get_fasta(self, idx: int) -> str:
 
@@ -84,7 +84,7 @@ class DataUtils():
             idx (int): The position of interest
         """
 
-        return self.shard_path / f'{self.mode}_fasta_{self.alt_suffix}' / f'split_{idx}_{self.mode}_ids_full.fasta'
+        return self.shard_path / f'split_{idx}_{self.mode}_ids_full.fasta'
 
     def get_dataset(self, idx):
         
@@ -98,7 +98,7 @@ class DataUtils():
             dataset (Dataset): dataset with all sequences in shard
         """
 
-        dataset = FastaBatchedDataset.from_file(self.shard_path / f'{self.mode}_fasta_{self.alt_suffix}' / f'split_{idx}_{self.mode}_ids_full.fasta')
+        dataset = FastaBatchedDataset.from_file(self.shard_path / f'split_{idx}_{self.mode}_ids_full.fasta')
 
         return dataset
 
@@ -120,7 +120,7 @@ class DataUtils():
         for idx, seq_name in enumerate(data.sequence_labels):
             seq_id = seq_name.split()[0]
             if seq_id not in keys:
-                bad_idxs.append(idx) # This was originally .append(seq_id) but that isn't correct??
+                bad_idxs.append(idx)
 
         data.sequence_strs = [x for i,x in enumerate(data.sequence_strs) if i not in bad_idxs]
         data.sequence_labels = [x for i,x in enumerate(data.sequence_labels) if i not in bad_idxs]
@@ -162,7 +162,7 @@ class DataUtils():
             hmmscan_dict (Dict): A dictionary containing the results of a parsed hmmscan file
         """
 
-        hmmscan_dict = hu.parse_hmmscan_results(self.shard_path / f'{self.mode}_scan_{self.alt_suffix}' / f'split_{idx}_{self.mode}_ids_full.fasta_scan.txt')
+        hmmscan_dict = hu.parse_hmmscan_results(self.shard_path / f'split_{idx}_{self.mode}_ids_full.fasta_scan.txt')
 
         return hmmscan_dict
 
@@ -374,16 +374,7 @@ def train_stepFamSimple(data_loader,
             fam_vector_raw = torch.tensor(fam_vector_raw[:stop_index,:]).to(device) # clip the fam_vector to the truncated sequence length
 
             # Logits are the raw output of the classifier!!! This should be used for CrossEntropyLoss()
-            weighted_fam_preds,fam_preds = classifier(embedding["representations"][data_utils.last_layer][idx,1:stop_index+1,:], clan_vector)
-            # clan_fam_matrix = data_utils.maps['clan_family_matrix'].to(device)
-            # clan_fam_weights = torch.matmul(clan_vector,clan_fam_matrix)
-
-            # loss is averaged over the whole sequence
-
-            # non_idr = fam_vector != 19632
-            # non_idr_loss = F.cross_entropy(weighted_fam_preds[non_idr], fam_vector[non_idr]) if non_idr.sum() > 0 else 0.
-
-            # fam_loss = non_idr_loss + 0.05*F.l1_loss(fam_preds, fam_vector_raw)         
+            weighted_fam_preds,fam_preds = classifier(embedding["representations"][data_utils.last_layer][idx,1:stop_index+1,:], clan_vector)      
 
             fam_loss = F.cross_entropy(weighted_fam_preds, fam_vector) #+ 0.05*F.l1_loss(fam_preds, fam_vector_raw)         
 
@@ -455,8 +446,8 @@ def train_stepClanFamSimple(data_loader,
             # Not teacher forcing at the moment - might be dumb, but just interested in seeing output
             clan_preds, weighted_fam_preds, fam_preds = classifier(embedding["representations"][data_utils.last_layer][idx,1:stop_index+1,:])     
 
-            fam_loss = F.cross_entropy(weighted_fam_preds, fam_vector) + 0.05*F.l1_loss(fam_preds, fam_vector_raw) # Can decide L1
-            clan_loss = F.cross_entropy(clan_preds, clan_vector) + 0.05*F.l1_loss(clan_preds, clan_vector) # Can decide L1
+            fam_loss = F.cross_entropy(weighted_fam_preds, fam_vector) #+ 0.05*F.l1_loss(fam_preds, fam_vector_raw) # Can decide L1
+            clan_loss = F.cross_entropy(clan_preds, clan_vector) #+ 0.05*F.l1_loss(clan_preds, clan_vector) # Can decide L1
 
             batch_loss = batch_loss + fam_loss + clan_loss # loss for each - check magnitude?
 

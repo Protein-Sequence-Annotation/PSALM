@@ -22,7 +22,7 @@ print(f'Device: {device}')
 For reproducible code
 """
 seed = 42 # Because ...
-mu.set_seeds(seed)
+mu.set_torch_seeds(seed)
 
 """
 Instantiate dataset helper object
@@ -59,7 +59,7 @@ else:
 
 resume = True
 if resume:
-    classifier_path = Path(f'../data/results/Clan_20epoch/epoch_19.pth')
+    classifier_path = Path(f'../data/results/clan_fam_simple/epoch_4.pth')
     classifier.load_state_dict(torch.load(classifier_path))
 
 """
@@ -79,22 +79,26 @@ os.makedirs(save_path, exist_ok=True)
 """
 Initialize wandb
 """
-run = wandb.init(project='LabMeeting_3_26', 
+run = wandb.init(project='esm2-linear3', 
                  entity='eddy_lab',
                  config={"epochs": num_epochs,
                          "lr": lr,
-                         "Architecture": "clan_long_p2",
+                         "Architecture": "clan_fam_p2",
                          "dataset": 'Pfam Seed'})
 
 """
 Training loop
 """
 
+shard_seed = 42
+shard_gen = np.random.default_rng(shard_seed)
+
 for epoch in range(num_epochs):
 
     epoch_loss = 0
     
     shard_order = np.arange(1,51)
+    # shard_gen.shuffle(shard_order)
     np.random.shuffle(shard_order)
 
     for shard in tqdm(shard_order ,total=data_utils.num_shards, desc='Shards completed'):
@@ -105,7 +109,7 @@ for epoch in range(num_epochs):
 
         data_loader = data_utils.get_dataloader(dataset)
 
-        shard_loss, n_batches = mu.train_step(data_loader, ###########################
+        shard_loss, n_batches = mu.train_stepClanFamSimple(data_loader, ###########################
                                                   classifier,
                                                   loss_fn,
                                                   optimizer,
