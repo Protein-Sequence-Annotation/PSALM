@@ -67,7 +67,9 @@ with open(new_hmm_db, "w") as hmmfile:
                 best_hsp = min((hsp for hsp in hit.hsps if hsp.bitscore >= bitscore_threshold), key=lambda hsp: hsp.evalue, default=None)
                 if best_hsp is not None:
                     tr_high_score_hits.append(f"{hit.id}/{best_hsp.hit_start+1}-{best_hsp.hit_end}")
-
+        if not tr_high_score_hits:
+            print("Skipped family: ", family_id)
+            continue
         # reformat train stockholm files to fasta format
         try:
             subprocess.run([reformat_command, "--informat", "stockholm", "-o", output_tr_fasta, "fasta", output_tr_sto], check=True)
@@ -92,7 +94,7 @@ with open(new_hmm_db, "w") as hmmfile:
 
         # Build a new profile from the aligned sequences
         try:
-            subprocess.run([hmmbuild_command,  new_hmm, hsh_align], check=True)
+            subprocess.run([hmmbuild_command,  new_hmm, hsh_align],stdout=subprocess.DEVNULL, check=True)
         except:
             print(f"Error building {family_id} profile")
         
