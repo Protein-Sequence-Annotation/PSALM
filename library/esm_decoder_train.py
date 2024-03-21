@@ -59,7 +59,7 @@ else:
 
 resume = True
 if resume:
-    classifier_path = Path(f'../data/results/clan_fam_simple/epoch_4.pth')
+    classifier_path = Path(f'../data/results/no_l1_part3/epoch_5.pth')
     classifier.load_state_dict(torch.load(classifier_path))
 
 """
@@ -83,7 +83,7 @@ run = wandb.init(project='esm2-linear3',
                  entity='eddy_lab',
                  config={"epochs": num_epochs,
                          "lr": lr,
-                         "Architecture": "clan_fam_p2",
+                         "Architecture": "try_non_idr",
                          "dataset": 'Pfam Seed'})
 
 """
@@ -98,7 +98,7 @@ for epoch in range(num_epochs):
     epoch_loss = 0
     
     shard_order = np.arange(1,51)
-    # shard_gen.shuffle(shard_order)
+    # shard_gen.shuffle(shard_order) # Use this for reprodcibility of shard order
     np.random.shuffle(shard_order)
 
     for shard in tqdm(shard_order ,total=data_utils.num_shards, desc='Shards completed'):
@@ -109,7 +109,7 @@ for epoch in range(num_epochs):
 
         data_loader = data_utils.get_dataloader(dataset)
 
-        shard_loss, n_batches = mu.train_stepClanFamSimple(data_loader, ###########################
+        shard_loss, n_batches = mu.train_stepFamSimpleNon(data_loader, ###########################
                                                   classifier,
                                                   loss_fn,
                                                   optimizer,

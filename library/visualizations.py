@@ -35,7 +35,7 @@ def clan_accuracies(result_path: Path, plot=False):
             top2_acc.append((first+second).mean())
 
             clans = np.unique(results[seq]['clan_true'])
-            pred_unique = np.unique(results[seq]['clan_idx'])
+            pred_unique = np.unique(results[seq]['clan_idx']) # Matching top prediction
             
             common = np.intersect1d(clans, pred_unique)
             set_acc.append(common/clans.shape[0]) # fraction of matching clans
@@ -139,7 +139,7 @@ def viewSingleClan(shard, seq, results, clan_keys):
     color_gen = np.random.default_rng(42)
     randomizer = np.arange(655)
     color_gen.shuffle(randomizer)
-    
+
     c_map = {}
 
     for c_idx, i in enumerate(randomizer):

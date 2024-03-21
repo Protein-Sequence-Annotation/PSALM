@@ -22,7 +22,7 @@ print(f'Device: {device}')
 For reproducible code
 """
 seed = 42 # Because ...
-mu.set_seeds(seed)
+mu.set_torch_seeds(seed)
 
 """
 Instantiate dataset helper object
@@ -30,7 +30,7 @@ Instantiate dataset helper object
 length_limit = 4096 # Covers 99.75% sequences
 model_name =  'esm2_t33_650M_UR50D' #'esm2_t36_3B_UR50D'
 num_shards = 50 ###### Replace with appropriate number ###################################
-data_utils = mu.DataUtils('../data', num_shards, model_name, length_limit, 'test', device)
+data_utils = mu.DataUtils('../data', num_shards, model_name, length_limit, 'test', device, '_OLD') # Running on old test for now
 
 """
 Model choice based on user input
@@ -67,6 +67,8 @@ classifier.load_state_dict(torch.load(classifier_path))
 """
 Testing loop
 """
+
+all_preds = {}
     
 for shard in tqdm(range(1, data_utils.num_shards+1) ,total=data_utils.num_shards, desc='Shards completed'):
 
@@ -76,20 +78,30 @@ for shard in tqdm(range(1, data_utils.num_shards+1) ,total=data_utils.num_shards
 
     data_loader = data_utils.get_dataloader(dataset)
 
-    shard_preds, n_batches = mu.test_step(data_loader, ###########################
-                                                classifier,
-                                                device,
-                                                data_utils,
-                                                hmm_dict)
+    if sys.argv[3] == 'fam':
+        shard_preds, n_batches = mu.test_stepFam(data_loader, 
+                                                    classifier,
+                                                    device,
+                                                    data_utils,
+                                                    hmm_dict)
+    elif sys.argv[3] == 'clan':
+        shard_preds, n_batches = mu.test_stepClan(data_loader, 
+                                                    classifier,
+                                                    device,
+                                                    data_utils,
+                                                    hmm_dict)
+    else:
+        print('Invalid argument')
+        sys.exit(2)
+        
     
-    with open(save_path / f'shard_{shard}.pkl', 'wb') as f:
-        pickle.dump(shard_preds, f)
+    all_preds = all_preds | shard_preds
 
-    print(f'Shard {shard} predictions saved')
+    print(f'Shard {shard} predictions processed')
 
 """
-Visualize results
+Save all predictions
 """
 
-# vz.clan_accuracies(save_path)
-    
+with open(save_path / f'{sys.argv[3]}_results.pkl', 'wb') as f:
+    pickle.dump(all_preds, f)
