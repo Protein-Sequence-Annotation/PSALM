@@ -213,7 +213,7 @@ def generate_domain_position_list2(hmmscan_dict, query_sequence, maps):
 # Functions helpful in parsing hmmscan results
 ##############################################################################################################
 
-def parse_hmmscan_results(file_path: str, e_value_threshold: float=0.01, target_prob: float=0.85, length_thresh: int=20, score_threshold: float=30) -> dict:
+def parse_hmmscan_results(file_path: str, e_value_threshold: float=0.01, target_prob: float=0.85, length_thresh: int=20, score_threshold: float=30, pred: bool=False) -> dict:
     """
     Parses the results of an hmmscan search from a file and returns a dictionary containing the parsed information.
 
@@ -247,8 +247,13 @@ def parse_hmmscan_results(file_path: str, e_value_threshold: float=0.01, target_
             hmmscan_dict[result.id] = {}
             hmmscan_dict[result.id]['length'] = result.seq_len
             hmmscan_dict[result.id]["hit_domains"] = hit_domains
-        else: 
+        elif pred:
+            hmmscan_dict[result.id] = {}
+            hmmscan_dict[result.id]['length'] = result.seq_len
+            hmmscan_dict[result.id]["hit_domains"] = [(-2,-1,50,'IDR', 'M')] # Some dummy IDR data
+        else:
             continue
+
     return hmmscan_dict
 
 def translate_to_MID(sequence: str, target_prob: float, length_thresh: int) -> str:
