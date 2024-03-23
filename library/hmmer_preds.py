@@ -9,14 +9,14 @@ def shard_predict(shard, target_path, pred_path, maps):
     shard_preds = {}
 
     target_dict = hu.parse_hmmscan_results(target_path / f'split_{shard}_test_ids_full.fasta_scan.txt')
-    pred_dict = hu.parse_hmmscan_results(pred_path / f'split_{shard}_test_ids_full.fasta_scan.txt')
+    pred_dict = hu.parse_hmmscan_results(pred_path / f'split_{shard}_test_ids_full.fasta_scan.txt', pred=True)
 
     for label in target_dict.keys():
 
         shard_preds[label] = {}
         
         target_vector, _ = hu.generate_domain_position_list2(target_dict, label, maps)
-        pred_vector, _ = hu.generate_domain_position_list2(pred_dict, label, maps, pred=True) # Account for no hits
+        pred_vector, _ = hu.generate_domain_position_list2(pred_dict, label, maps) # Account for no hits
 
         stop_index_target = min(target_dict[label]['length'], 4096) # Hard coded limit currently
         stop_index_pred = min(pred_dict[label]['length'], 4096)
@@ -69,7 +69,7 @@ def hmm_predict():
 
         all_preds = all_preds | shard_preds
 
-    with open(f'../data/hmmer_preds/fam_results.pkl', 'wb') as f:
+    with open(f'../data/results/hmmer_preds/fam_results.pkl', 'wb') as f:
         pickle.dump(all_preds, f)
 
     return
