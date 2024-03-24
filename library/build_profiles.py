@@ -63,10 +63,13 @@ with open(new_hmm_db, "w") as hmmfile:
         tr_high_score_hits = []
         for query in SearchIO.parse(output_tr_domtbl, 'hmmsearch3-domtab'):
             for hit in query.hits:
-                # Find the hsp with the smallest evalue and filter by bitscore ***MODEL ONLY SEES SINGLE STRONGEST HIT***
-                best_hsp = min((hsp for hsp in hit.hsps if hsp.bitscore >= bitscore_threshold), key=lambda hsp: hsp.evalue, default=None)
-                if best_hsp is not None:
-                    tr_high_score_hits.append(f"{hit.id}/{best_hsp.hit_start+1}-{best_hsp.hit_end}")
+                for hsp in hit.hsps:
+                    if hsp.evalue <= float(incE) and hsp.bitscore >= bitscore_threshold:
+                        tr_high_score_hits.append(f"{hit.id}/{hsp.hit_start+1}-{hsp.hit_end}")
+                # # Find the hsp with the smallest evalue and filter by bitscore ***MODEL ONLY SEES SINGLE STRONGEST HIT***
+                # best_hsp = min((hsp for hsp in hit.hsps if hsp.bitscore >= bitscore_threshold), key=lambda hsp: hsp.evalue, default=None)
+                # if best_hsp is not None:
+                #     tr_high_score_hits.append(f"{hit.id}/{best_hsp.hit_start+1}-{best_hsp.hit_end}")
         if not tr_high_score_hits:
             print("Skipped family: ", family_id)
             continue
