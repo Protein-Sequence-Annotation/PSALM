@@ -131,7 +131,10 @@ def clan_accuracies(result_path: Path, plot=False):
     return
 
 
-def viewSingleClan(shard, seq, results, clan_keys):
+def viewSingleClan(shard, seq, results, clan_keys,pid_dict_pkl):
+    # Open the json file
+    with open(f'../data/benchmarking/{pid_dict_pkl}', 'rb') as f:
+        pid_dict = pickle.load(f)
 
     import matplotlib as mpl
     colors = mpl.colormaps.get_cmap('tab20b').resampled(655) # Listed color map vs linear segmented: add .colors at end
@@ -173,7 +176,7 @@ def viewSingleClan(shard, seq, results, clan_keys):
     for entry in unique_target:
         idx = np.where(true==entry)[0]
         # ax1.fill_between(idx, 0,1, color=c_map[entry])
-        ax1.bar(idx, 1, width=1.0, color=c_map[entry], label=clan_keys[entry])
+        ax1.bar(idx, 1, width=1.0, color=c_map[entry], label=f"{clan_keys[entry]}:\n {pid_dict[seq][clan_keys[entry]]}%")
 
     for entry in unique_test_1:
         idx = np.where(pred1_labels==entry)[0]

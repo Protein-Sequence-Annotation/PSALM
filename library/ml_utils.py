@@ -679,3 +679,127 @@ def test_stepFam(data_loader,
                 shard_preds[label]['non_idr_top2'] = (first_non_idr+second_non_idr).mean()
 
     return shard_preds, n_batches
+
+def test_stepFamJoint(data_loader,
+               classifier_clan,
+               classifier_fam,
+               device,
+               data_utils,
+               hmm_dict):
+
+    """
+    Runs a test step for one shard and only saves accuracy
+
+    Args:
+        data_loader (DataLoader): A data loader object with the current dataset
+        classifier_clan (nn.Module): The classifier head to decode esm embeddings for clan
+        classifier_fam (nn.Module): The classifier head to decode esm embeddings for fam
+        device (str): GPU / CPU selection
+        data_utils (DataUtils): Member functions and helpers for processing HMM data
+        hmm_dict (Dict): dictionary with parsed results of hmmscan for current shard
+
+    Returns:
+        shard_preds (Dict): predictions for each sequence: top 2 accuracy, fam wise acc, adjusted acc
+        shard_length (torch.Int): length of all sequences in shard
+    """
+
+    shard_preds = {}
+
+    n_batches = len(data_loader)
+
+    classifier_clan.eval()
+    classifier_fam.eval()
+
+    with torch.inference_mode():
+
+        for batch_id, (labels, seqs, tokens) in enumerate(data_loader):
+
+            tokens = tokens.to(device)
+            embedding = data_utils.get_embedding(tokens)
+
+            sequence_labels = [x.split()[0] for x in labels]
+
+            for idx, label in enumerate(sequence_labels):
+
+                fam_vector, clan_vector = hu.generate_domain_position_list2(hmm_dict, label, data_utils.maps)
+                
+                stop_index = min(len(seqs[idx]), data_utils.length_limit)
+                
+                fam_vector = np.argmax(fam_vector[:stop_index,:], axis=1) # clip the clan_vector to the truncated sequence length, no need to place on gpu
+                clan_vector = torch.tensor(clan_vector[:stop_index,:]).to(device) # Used in fam prediction, so send to gpu
+
+                # Logits are the raw output of the classifier!!! This should be used for CrossEntropyLoss()
+                clan_preds = classifier_clan(embedding["representations"][data_utils.last_layer][idx,1:stop_index+1,:])
+                clan_preds = F.softmax(clan_preds, dim=1)
+                ########
+                # Find the indices of the max values along dimension 1
+                max_indices = torch.argmax(clan_preds, dim=1)
+
+                # Create a tensor of zeros with the same shape as clan_preds
+                clan_preds_one_hot = torch.zeros_like(clan_preds)
+
+                # Replace the max indices with 1
+                clan_preds_one_hot.scatter_(1, max_indices.unsqueeze(1), 1)
+                clan_preds = clan_preds_one_hot
+                #########
+                
+                preds, _ = classifier_fam(embedding["representations"][data_utils.last_layer][idx,1:stop_index+1,:], clan_preds)
+                preds = F.softmax(preds, dim=1).cpu()
+
+                # Store predictions
+                shard_preds[label] = {}
+
+                top_two_vals, top_two_indices = torch.topk(preds, k=2, dim=1)
+                top_two_indices = top_two_indices.numpy() # convert vals as well, once we use it
+                
+                first = top_two_indices[:,0] == fam_vector
+                second = top_two_indices[:,1] == fam_vector
+
+                shard_preds[label]['top'] = first.mean()
+                shard_preds[label]['top2'] = (first+second).mean()
+
+                fams = np.unique(fam_vector)
+                # pred_unique = np.unique(top_two_indices) # Unique from top? Or top 2?
+                
+                # Not implementing set wise match currently
+                # common = np.intersect1d(fams, pred_unique)
+                # shard_preds[label]['set_acc'] = common/fams.shape[0] # fraction of matching fams
+                # shard_preds[label]['set_strict'] = (fams.shape[0] == pred_unique.shape[0]) and common.shape[0] == fams.shape[0]
+
+                top_total = 0. # Fam wise top
+                top2_total = 0. # Fam wise top 2
+
+                for fam in fams:
+                    idx = (fam_vector == fam)
+                    first = top_two_indices[:,0][idx] == fam_vector[idx]
+                    second = top_two_indices[:,1][idx] == fam_vector[idx]
+                    
+                    top_total += first.mean()
+                    top2_total += (first+second).mean()
+
+                shard_preds[label]['fam_top'] = (top_total / fams.shape[0])
+                shard_preds[label]['fam_top2'] = (top2_total / fams.shape[0])
+                
+                adjusted_score = 0.
+                dubious_pos = 0
+                # If positions match, then full score
+                # If within a 10 residue window (+5, -5), then full score
+                # Not implementing confusion between NC and IDR since this is fam and there is no NC
+
+                for i in range(fam_vector.shape[0]):
+                    if fam_vector[i] == top_two_indices[i,0]:
+                        adjusted_score += 1
+                    elif (fam_vector[i] == top_two_indices[max(0,i-5):i+1,0]).any() or \
+                        (fam_vector[i] == top_two_indices[i:min(i+5,fam_vector.shape[0]),0]).any():
+                        adjusted_score += 1
+
+                shard_preds[label]['adjusted_acc'] = adjusted_score / (fam_vector.shape[0]-dubious_pos+1e-3)
+
+                non_idr = fam_vector != 19632
+                first_non_idr = top_two_indices[:,0][non_idr] == fam_vector[non_idr]
+                second_non_idr = top_two_indices[:,1][non_idr] == fam_vector[non_idr]
+
+                shard_preds[label]['non_idr_top'] = first_non_idr.mean()
+                shard_preds[label]['non_idr_top2'] = (first_non_idr+second_non_idr).mean()
+
+    return shard_preds, n_batches
