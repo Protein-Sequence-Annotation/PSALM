@@ -176,6 +176,38 @@ class FamModelSimple(nn.Module):
 
         return weighted_fam_vectors, x
 
+class FamModelSimple_onehot_dim_matched(nn.Module): 
+    def __init__(self, embed_dim, maps, device):
+        super().__init__()
+        self.esm_dim = 1280
+        self.clan_fam_matrix = maps['clan_family_matrix'].to(device)
+        self.f = self.clan_fam_matrix.shape[1]
+
+        self.lstm = nn.LSTM(embed_dim, self.esm_dim, bidirectional=True)
+
+        self.linear_stack = nn.Sequential(
+            nn.Linear(2*self.esm_dim, 4*self.esm_dim), # Everything x2 because biLSTM
+            nn.ReLU(),
+            nn.LayerNorm(4*self.esm_dim),
+            nn.Linear(4*self.esm_dim, 4*self.esm_dim), # Everything x2 because biLSTM
+            nn.ReLU(),
+            nn.LayerNorm(4*self.esm_dim),
+            nn.Linear(4*self.esm_dim, self.f)
+        )
+
+    def forward(self, x,x_c):
+        # Generate clan to fam weights
+        weights = torch.matmul(x_c, self.clan_fam_matrix)
+
+        # Get fam logits
+        x, _ = self.lstm(x)
+        x = self.linear_stack(x)
+
+        # elementwise multiplication of weights and fam_vectors
+        weighted_fam_vectors = x * weights
+
+        return weighted_fam_vectors, x
+
 class ClanLSTM(nn.Module):
 
     def __init__(self, embed_dim, output_dim):
@@ -191,6 +223,30 @@ class ClanLSTM(nn.Module):
             nn.ReLU(),
             nn.LayerNorm(4*embed_dim),
             nn.Linear(4*embed_dim, output_dim)
+        )
+
+    def forward(self, x):
+
+        x, _ = self.lstm(x)
+        x = self.linear_stack(x)
+
+        return x
+
+class ClanLSTM_onehot_dim_matched(nn.Module):
+
+    def __init__(self, embed_dim, output_dim):
+        super().__init__()
+        self.esm_dim = 1280
+        self.lstm = nn.LSTM(embed_dim, self.esm_dim, bidirectional=True)
+
+        self.linear_stack = nn.Sequential(
+            nn.Linear(2*self.esm_dim, 4*self.esm_dim), # Everything x2 because biLSTM
+            nn.ReLU(),
+            nn.LayerNorm(4*self.esm_dim),
+            nn.Linear(4*self.esm_dim, 4*self.esm_dim), # Everything x2 because biLSTM
+            nn.ReLU(),
+            nn.LayerNorm(4*self.esm_dim),
+            nn.Linear(4*self.esm_dim, output_dim)
         )
 
     def forward(self, x):

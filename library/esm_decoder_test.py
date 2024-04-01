@@ -117,16 +117,14 @@ for shard in tqdm(range(1, data_utils.num_shards+1) ,total=data_utils.num_shards
     all_preds = all_preds | shard_preds
 
     print(f'Shard {shard} predictions processed')
-
     
-    # with open(save_path / f'{sys.argv[3]}_results_onehot.pkl', 'wb') as f:
-    #     pickle.dump(all_preds, f)
-    with open(f'/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/clan_fam_onehots/{sys.argv[3]}_results_onehot.pkl', 'wb') as f:
-        pickle.dump(all_preds, f)
 
 """
 Save all predictions
 """
 
-with open(save_path / f'{sys.argv[3]}_results_onehot.pkl', 'wb') as f:
-    pickle.dump(all_preds, f)
+# with open(save_path / f'{sys.argv[3]}_results_onehot.pkl', 'wb') as f:
+#     pickle.dump(all_preds, f)
+
+with open(f'/n/eddy_lab/Lab/protein_annotation_dl/PSALM/data/results/clan_fam_onehots/{sys.argv[3]}_results_onehot.pkl', 'wb') as f:
+        pickle.dump(all_preds, f)

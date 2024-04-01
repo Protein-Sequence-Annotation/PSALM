@@ -45,10 +45,16 @@ elif sys.argv[1] == 'CLN4': # Clan - 4 Linear Norm head
     classifier = cf.LinearHead4Normed(data_utils.embedding_dim, 2*data_utils.embedding_dim,data_utils.clan_count).to(device)
 elif sys.argv[1] == 'CMLN3': # Clan - lstM 3 Linear Norm head
     classifier = cf.ClanLSTM(data_utils.embedding_dim,data_utils.clan_count).to(device)
+elif sys.argv[1] == 'CMLN3_onehot': # Clan - lstM 3 Linear Norm head
+    classifier = cf.ClanLSTM(len(data_utils.onehot_alphabet),data_utils.clan_count).to(device)
+elif sys.argv[1] == "CMLN3_onehot_dim_matched":
+    classifier = cf.ClanLSTM_onehot_dim_matched(len(data_utils.onehot_alphabet),data_utils.clan_count).to(device)
 elif sys.argv[1] == 'FamMoE':
     classifier = cf.FamModelMoE(data_utils.embedding_dim, data_utils.maps, device).to(device)
 elif sys.argv[1] == 'FamSimple':
     classifier = cf.FamModelSimple(data_utils.embedding_dim, data_utils.maps, device).to(device)
+elif sys.argv[1] == "FamSimple_onehot_dim_matched":
+    classifier = cf.FamModelSimple_onehot_dim_matched(len(data_utils.onehot_alphabet), data_utils.maps, device).to(device)
 elif sys.argv[1] == 'FamMoELSTM':
     classifier = cf.FamModelMoELSTM(data_utils.embedding_dim, data_utils.maps, device).to(device)
 elif sys.argv[1] == 'ClanFamSimple':
@@ -57,7 +63,7 @@ else:
     print('Incorrect Model choice')
     sys.exit(2)
 
-resume = True
+resume = False
 if resume:
     classifier_path = Path(f'../data/results/no_l1_part3/epoch_5.pth')
     classifier.load_state_dict(torch.load(classifier_path))
@@ -68,11 +74,11 @@ Parameters for training loop
 
 loss_fn = nn.CrossEntropyLoss() ############ Changed for weighted LSTM
 # loss_fn = nn.BCEWithLogitsLoss(reduction='sum')
-lr = 0.0001
+lr = 0.001
 optimizer = torch.optim.Adam(classifier.parameters(), lr=lr)
 scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=0.1, threshold_mode="rel") # lower LR if less than 10% decrease
 
-num_epochs = 10
+num_epochs = 30
 save_path = Path(f'../data/results/{sys.argv[2]}')
 os.makedirs(save_path, exist_ok=True)
 
@@ -83,7 +89,7 @@ run = wandb.init(project='esm2-linear3',
                  entity='eddy_lab',
                  config={"epochs": num_epochs,
                          "lr": lr,
-                         "Architecture": "try_non_idr",
+                         "Architecture": "one_hot basic",
                          "dataset": 'Pfam Seed'})
 
 """
@@ -109,7 +115,7 @@ for epoch in range(num_epochs):
 
         data_loader = data_utils.get_dataloader(dataset)
 
-        shard_loss, n_batches = mu.train_stepFamSimpleNon(data_loader, ###########################
+        shard_loss, n_batches = mu.train_stepFamOneHot(data_loader, ###########################
                                                   classifier,
                                                   loss_fn,
                                                   optimizer,
