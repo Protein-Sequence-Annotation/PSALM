@@ -96,7 +96,7 @@ def split_seqs(threshold, halt=-1):
 
         for idx, record in tqdm(enumerate(SeqIO.parse(seqs_db, "fasta")), total=num_records, desc='Sequences Parsed'):
 
-            if idx < 361962:
+            if idx < 653263:
                 continue
 
             elif group_idx[idx] == 0: # Inclusion in train if there are no seqs in test OR assignment is possible
