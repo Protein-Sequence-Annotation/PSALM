@@ -4,3 +4,5 @@ data/
 bash_scripts/
 misc/
 combo_commit.sh
+beta_release/
+dev/
