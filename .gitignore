@@ -1,8 +1,7 @@
-data/
+dev/data/
 .DS_Store
 .vscode/
 bash_scripts/
-misc/
+dev/misc/
 combo_commit.sh
-beta_release/
-dev/
+beta_release/models/
