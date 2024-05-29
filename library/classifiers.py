@@ -232,6 +232,12 @@ class ClanLSTM(nn.Module):
 
         return x
 
+    def embed(self, x):
+
+        x, _ = self.lstm(x)
+
+        return x
+
 class ClanLSTM_onehot_dim_matched(nn.Module):
 
     def __init__(self, embed_dim, output_dim):

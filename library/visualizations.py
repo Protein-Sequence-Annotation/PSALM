@@ -295,6 +295,314 @@ def viewSingleFam(shard, seq, results, fam_keys, pid_dict_pkl):
 
     return
 
+def viewAll(shard, seq, results_clan, results_fam, results_hmm, fam_keys, clan_keys, pid_dict_pkl):
+
+    with open(f'../data/benchmarking/{pid_dict_pkl}', 'rb') as f:
+        pid_dict = pickle.load(f)
+    
+    import matplotlib as mpl
+
+    ##########################################
+    # Color generation
+    fam_colors = mpl.colormaps.get_cmap('tab20b').resampled(19633) # Listed color map vs linear segmented: add .colors at end
+
+    fam_color_gen = np.random.default_rng(42)
+    randomizer = np.arange(19632)
+    fam_color_gen.shuffle(randomizer)
+
+    fam_c_map = {}
+    
+    for c_idx, i in enumerate(randomizer):
+        fam_c_map[i] = fam_colors(c_idx)
+
+    fam_c_map[19632] = 'black'
+
+    clan_colors = mpl.colormaps.get_cmap('tab20b').resampled(655) # Listed color map vs linear segmented: add .colors at end
+
+    clan_color_gen = np.random.default_rng(42)
+    randomizer = np.arange(655)
+    clan_color_gen.shuffle(randomizer)
+
+    clan_c_map = {}
+
+    for c_idx, i in enumerate(randomizer):
+        clan_c_map[i] = clan_colors(c_idx)
+
+    clan_c_map[655] = 'red'
+    clan_c_map[656] = 'black'
+    ##############################################
+
+    #############################################
+    # Fam results
+
+    fam_true = results_fam[seq]['fam_true']
+    fam_pred_labels = results_fam[seq]['fam_idx']
+    fam_pred_vals = results_fam[seq]['fam_vals']
+    fam_true_vals = results_fam[seq]['fam_true_vals']
+    
+    fam_pred1_labels = fam_pred_labels[:,0]
+    fam_pred2_labels = fam_pred_labels[:,1]
+    fam_pred1_vals = fam_pred_vals[:,0]
+    fam_pred2_vals = fam_pred_vals[:,1]
+
+    fam_unique_test_1 = np.unique(fam_pred1_labels)
+    fam_unique_test_2 = np.unique(fam_pred2_labels)
+
+    fam_unique_target = np.unique(fam_true)
+
+    fam_first = fam_true == fam_pred1_labels
+    fam_second = fam_true == fam_pred2_labels
+
+    fam_non_idr_idx = fam_true != 19632
+    fam_non_idr_first = fam_true[fam_non_idr_idx] == fam_pred1_labels[fam_non_idr_idx]
+    fam_non_idr_second = fam_true[fam_non_idr_idx] == fam_pred2_labels[fam_non_idr_idx]
+    ##############################################
+
+    ##############################################
+    # Clan results
+
+    clan_true = results_clan[seq]['clan_true']
+    clan_pred_labels = results_clan[seq]['clan_idx']
+    clan_pred_vals = results_clan[seq]['clan_vals']
+    clan_true_vals = results_clan[seq]['clan_true_vals']
+    
+    clan_pred1_labels = clan_pred_labels[:,0]
+    clan_pred2_labels = clan_pred_labels[:,1]
+    clan_pred1_vals = clan_pred_vals[:,0]
+    clan_pred2_vals = clan_pred_vals[:,1]
+
+    clan_unique_target = np.unique(clan_true)
+
+    clan_unique_test_1 = np.unique(clan_pred1_labels)
+    clan_unique_test_2 = np.unique(clan_pred2_labels)
+
+    clan_first = clan_true == clan_pred1_labels
+    clan_second = clan_true == clan_pred2_labels
+
+    clan_non_idr_idx = clan_true != 656
+    clan_non_idr_first = clan_true[clan_non_idr_idx] == clan_pred1_labels[clan_non_idr_idx]
+    clan_non_idr_second = clan_true[clan_non_idr_idx] == clan_pred2_labels[clan_non_idr_idx]
+    ###############################################
+
+    ###############################################
+    # HMMER results
+
+    hmm_true = results_hmm[seq]['hmm_true']
+    hmm_pred_labels = results_hmm[seq]['hmm_idx']
+    hmm_pred_vals = results_hmm[seq]['hmm_vals']
+    hmm_true_vals = results_hmm[seq]['hmm_true_vals']
+    
+    hmm_pred1_labels = hmm_pred_labels[:,0]
+    hmm_pred2_labels = hmm_pred_labels[:,1]
+    hmm_pred1_vals = hmm_pred_vals[:,0]
+    hmm_pred2_vals = hmm_pred_vals[:,1]
+
+    hmm_unique_test_1 = np.unique(hmm_pred1_labels)
+    hmm_unique_test_2 = np.unique(hmm_pred2_labels)
+
+    hmm_first = hmm_true == hmm_pred1_labels
+    hmm_second = hmm_true == hmm_pred2_labels
+
+    hmm_non_idr_idx = hmm_true != 19632
+    hmm_non_idr_first = hmm_true[hmm_non_idr_idx] == hmm_pred1_labels[hmm_non_idr_idx]
+    hmm_non_idr_second = hmm_true[hmm_non_idr_idx] == hmm_pred2_labels[hmm_non_idr_idx]
+    ##############################################
+
+    ##############################################
+    # Plot all
+    f, (ax1, ax2, ax3, ax4) = plt.subplots(4,1, figsize=(15,9))
+
+    for entry in fam_unique_target:
+        idx = np.where(fam_true==entry)[0]
+        ax1.bar(idx, 0.45, width=1.0, color=fam_c_map[entry], label=f"{fam_keys[entry]}:\n {pid_dict[seq][fam_keys[entry]]}%")
+        
+    for entry in clan_unique_target:
+        idx = np.where(clan_true==entry)[0]
+        ax1.bar(idx, 0.45, width=1.0, color=clan_c_map[entry], bottom=0.55)
+
+    for entry in fam_unique_test_1:
+        idx = np.where(fam_pred1_labels==entry)[0]
+        ax2.bar(idx, fam_pred1_vals[idx], width=1.0, color=fam_c_map[entry], label=fam_keys[entry])
+
+    for entry in hmm_unique_test_1:
+        idx = np.where(hmm_pred1_labels==entry)[0]
+        ax3.bar(idx, hmm_pred1_vals[idx], width=1.0, color=fam_c_map[entry], label=fam_keys[entry])
+
+    for entry in clan_unique_test_1:
+        idx = np.where(clan_pred1_labels==entry)[0]
+        ax4.bar(idx, clan_pred1_vals[idx], width=1.0, color=clan_c_map[entry], label=clan_keys[entry])
+    #############################################
+
+    #############################################
+    # Axis labels
+    ax4.set_xlabel('Position')
+    ax1.set_title(f'Shard {shard}: Sequence {seq}   Fam: {fam_first.mean():.2f}   HMM: {hmm_first.mean():.2f}   Clan: {clan_first.mean():.2f}    NI Fam: {fam_non_idr_first.mean():.2f}   NI HMM: {hmm_non_idr_first.mean():.2f}   NI Clan: {clan_non_idr_first.mean():.2f}')
+    ax1.legend(ncol=min(8, fam_unique_target.shape[0]), loc='upper center')
+    ax2.legend(ncol=min(8, fam_unique_test_1.shape[0]), loc='upper center')
+    ax3.legend(ncol=min(8, hmm_unique_test_1.shape[0]), loc='upper center')
+    ax4.legend(ncol=min(8, clan_unique_test_1.shape[0]), loc='upper center')
+
+    ax1.set_ylabel('Target')
+    ax2.set_ylabel('PSALM fam')
+    ax3.set_ylabel('HMMER* fam')
+    ax4.set_ylabel('PSALM clan')
+
+    ax1.grid(False)
+    ax2.grid(False)
+    ax3.grid(False)
+    ax4.grid(False)
+
+    ax1.set_xlim(0,fam_pred_labels.shape[0])
+    ax2.set_xlim(0,fam_pred_labels.shape[0])
+    ax3.set_xlim(0,hmm_pred_labels.shape[0])
+    ax4.set_xlim(0,clan_pred_labels.shape[0])
+
+    ax1.set_ylim(0,1.2)
+    ax2.set_ylim(0,1.2)
+    ax3.set_ylim(0,1.2)
+    ax4.set_ylim(0,1.2)
+
+    ax1.set_yticks([0.25, 0.75], ['Fam', 'Clan'])
+    ############################################
+
+    return
+
+def viewPaper(shard, seq, results_clan, results_fam, fam_keys, clan_keys, pid_dict_pkl):
+
+    with open(f'../data/benchmarking/{pid_dict_pkl}', 'rb') as f:
+        pid_dict = pickle.load(f)
+    
+    import matplotlib as mpl
+
+    ##########################################
+    # Color generation
+    fam_colors = mpl.colormaps.get_cmap('tab20b').resampled(19633) # Listed color map vs linear segmented: add .colors at end
+
+    fam_color_gen = np.random.default_rng(42)
+    randomizer = np.arange(19632)
+    fam_color_gen.shuffle(randomizer)
+
+    fam_c_map = {}
+    
+    for c_idx, i in enumerate(randomizer):
+        fam_c_map[i] = fam_colors(c_idx)
+
+    fam_c_map[19632] = 'black'
+
+    clan_colors = mpl.colormaps.get_cmap('tab20b').resampled(655) # Listed color map vs linear segmented: add .colors at end
+
+    clan_color_gen = np.random.default_rng(42)
+    randomizer = np.arange(655)
+    clan_color_gen.shuffle(randomizer)
+
+    clan_c_map = {}
+
+    for c_idx, i in enumerate(randomizer):
+        clan_c_map[i] = clan_colors(c_idx)
+
+    clan_c_map[655] = 'red'
+    clan_c_map[656] = 'black'
+    ##############################################
+
+    #############################################
+    # Fam results
+
+    fam_true = results_fam[seq]['fam_true']
+    fam_pred_labels = results_fam[seq]['fam_idx']
+    fam_pred_vals = results_fam[seq]['fam_vals']
+    fam_true_vals = results_fam[seq]['fam_true_vals']
+    
+    fam_pred1_labels = fam_pred_labels[:,0]
+    fam_pred2_labels = fam_pred_labels[:,1]
+    fam_pred1_vals = fam_pred_vals[:,0]
+    fam_pred2_vals = fam_pred_vals[:,1]
+
+    fam_unique_test_1 = np.unique(fam_pred1_labels)
+    fam_unique_test_2 = np.unique(fam_pred2_labels)
+
+    fam_unique_target = np.unique(fam_true)
+
+    fam_first = fam_true == fam_pred1_labels
+    fam_second = fam_true == fam_pred2_labels
+
+    fam_non_idr_idx = fam_true != 19632
+    fam_non_idr_first = fam_true[fam_non_idr_idx] == fam_pred1_labels[fam_non_idr_idx]
+    fam_non_idr_second = fam_true[fam_non_idr_idx] == fam_pred2_labels[fam_non_idr_idx]
+    ##############################################
+
+    ##############################################
+    # Clan results
+
+    clan_true = results_clan[seq]['clan_true']
+    clan_pred_labels = results_clan[seq]['clan_idx']
+    clan_pred_vals = results_clan[seq]['clan_vals']
+    clan_true_vals = results_clan[seq]['clan_true_vals']
+    
+    clan_pred1_labels = clan_pred_labels[:,0]
+    clan_pred2_labels = clan_pred_labels[:,1]
+    clan_pred1_vals = clan_pred_vals[:,0]
+    clan_pred2_vals = clan_pred_vals[:,1]
+
+    clan_unique_target = np.unique(clan_true)
+
+    clan_unique_test_1 = np.unique(clan_pred1_labels)
+    clan_unique_test_2 = np.unique(clan_pred2_labels)
+
+    clan_first = clan_true == clan_pred1_labels
+    clan_second = clan_true == clan_pred2_labels
+
+    clan_non_idr_idx = clan_true != 656
+    clan_non_idr_first = clan_true[clan_non_idr_idx] == clan_pred1_labels[clan_non_idr_idx]
+    clan_non_idr_second = clan_true[clan_non_idr_idx] == clan_pred2_labels[clan_non_idr_idx]
+    ###############################################
+
+    ##############################################
+    # Plot all
+    f, (ax1, ax2, ax3) = plt.subplots(3,1, figsize=(15,9))
+
+    for entry in fam_unique_target:
+        idx = np.where(fam_true==entry)[0]
+        ax1.bar(idx, 0.45, width=1.0, color=fam_c_map[entry], label=f"{fam_keys[entry]}:\n {pid_dict[seq][fam_keys[entry]]}%")
+        print(f'{fam_keys[entry]}:\n {pid_dict[seq][fam_keys[entry]]}%')
+        
+    for entry in clan_unique_target:
+        idx = np.where(clan_true==entry)[0]
+        ax1.bar(idx, 0.45, width=1.0, color=clan_c_map[entry], bottom=0.55)
+
+    for entry in fam_unique_test_1:
+        idx = np.where(fam_pred1_labels==entry)[0]
+        ax2.bar(idx, fam_pred1_vals[idx], width=1.0, color=fam_c_map[entry], label=fam_keys[entry])
+
+    for entry in clan_unique_test_1:
+        idx = np.where(clan_pred1_labels==entry)[0]
+        ax3.bar(idx, clan_pred1_vals[idx], width=1.0, color=clan_c_map[entry], label=clan_keys[entry])
+    #############################################
+
+    #############################################
+    # Axis labels
+    ax3.set_xlabel('Position')
+    # ax1.set_title(f'Shard {shard}: Sequence {seq}   Fam: {fam_first.mean():.2f}   Clan: {clan_first.mean():.2f}    NI Fam: {fam_non_idr_first.mean():.2f}  NI Clan: {clan_non_idr_first.mean():.2f}')
+    print(f'Shard {shard}: Sequence {seq}   Fam: {fam_first.mean():.2f}   Clan: {clan_first.mean():.2f}    NI Fam: {fam_non_idr_first.mean():.2f}  NI Clan: {clan_non_idr_first.mean():.2f}')
+
+    ax1.set_ylabel('Target')
+    ax2.set_ylabel('PSALM fam')
+    ax3.set_ylabel('PSALM clan')
+
+    ax1.grid(False)
+    ax2.grid(False)
+    ax3.grid(False)
+
+    ax1.set_xlim(0,fam_pred_labels.shape[0])
+    ax2.set_xlim(0,fam_pred_labels.shape[0])
+    ax3.set_xlim(0,clan_pred_labels.shape[0])
+
+    ax1.set_ylim(0,1.2)
+    ax2.set_ylim(0,1.2)
+    ax3.set_ylim(0,1.2)
+
+    ax1.set_yticks([0.25, 0.75], ['Fam', 'Clan'])
+    ############################################
+
 if __name__ == '__main__':
 
     dpath = Path('../data/results/try_lstm_part2/predictions_esm2_t33_650M_UR50D')

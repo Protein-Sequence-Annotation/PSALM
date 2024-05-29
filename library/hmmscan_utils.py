@@ -87,6 +87,27 @@ def modify_clan_vector(clans, scores, clan_vector):
 
     return clan_vector
 
+def modify_clan_vector2(clans, scores, clan_vector): #for bitscore stuff
+
+    """
+    Adjusts probabilities for families belonging to same clan.
+    Computes the sum over family probabilities and uses that for all
+    entries of the corresponding clan
+
+    Args:
+        clans (np.ndarray): a vector containing clan index for each family
+        scores (np.ndarray): a vector containing probability for each family
+        clan_vector (np.ndarray): placeholder for vector of adjusted clan probabilities 
+
+    Returns:
+        clan_vector (np.ndarray): vector containing adjusted scores for each clan index 
+    """
+    idx = np.argmax(scores)
+    bitscore = scores[idx]
+    clan_vector[clans[idx]] = bitscore
+
+    return clan_vector
+
 def generate_domain_position_list(hmmscan_dict, query_sequence, maps, indices = False):
 
     """
@@ -124,7 +145,7 @@ def generate_domain_position_list(hmmscan_dict, query_sequence, maps, indices = 
 
         # If there are no domains at this position, set to 0
         if len(domains) == 0:
-            domains = [("IDR",50, "M")] #high score just to make sure IDR has highest mass
+            domains = [("IDR",1000, "M")] #high score just to make sure IDR has highest mass
         # Otherwise, calculate the probabilities for the relevant domains
         else:
             # If one of the domains at this position contain both M and I states, drop the I states from the domains list
@@ -186,7 +207,7 @@ def generate_domain_position_list2(hmmscan_dict, query_sequence, maps):
 
         # If there are no domains at this position, set to 0
         if len(domains) == 0:
-            domains = [("IDR",50, "M")] #high score just to make sure IDR has highest mass
+            domains = [("IDR",1000, "M")] #high score just to make sure IDR has highest mass
         # Otherwise, calculate the probabilities for the relevant domains
         else:
             # If one of the domains at this position contain both M and I states, drop the I states from the domains list
@@ -196,7 +217,7 @@ def generate_domain_position_list2(hmmscan_dict, query_sequence, maps):
         # Unzip the domains list
         domain_names, scores, __ = zip(*domains)
         # Calculate the probabilities
-        scores = calculate_prob(scores)
+        scores = calculate_prob(scores) # COMMENTED OUT BECAUSE ONLY NEED TO SEE BITSCORES (FOR ROC)
 
         # Get the index of the domains in the family mapping
         domain_idx = [family_mapping[domain] for domain in domain_names]
@@ -205,6 +226,66 @@ def generate_domain_position_list2(hmmscan_dict, query_sequence, maps):
         # Set the probabilities in the domain and clan vectors
         domain_vector[domain_idx,i] = scores
         clan_vector[:, i] = modify_clan_vector(clan_dom, scores, clan_vector[:,i])
+    # clan_vector = np.argmax(clan_vector, axis=0) #return indices of max clan probabilities
+    
+    return domain_vector.T, clan_vector.T
+
+def generate_domain_position_list3(hmmscan_dict, query_sequence, maps):
+
+    """
+    Create domain and clan probability vectors for a given query sequence
+
+    Args:
+        hmmscan_dict (dict): A dictionary containing the parsed hmmscan results. The keys are the sequence IDs, and the values are
+                            dictionaries containing the sequence length and a list of hit domains. Each hit domain is represented as
+                            a tuple containing the query start position, query end position, bit score, hit ID, and translated query
+                            sequence.
+        query_sequence (str): A string with the ID of the query sequence
+        maps (dict): A dictionary containing maps from family -> index, family -> clan
+                    and clan -> index, each stored as dictionaries
+    
+    Returns:
+        domain_vector (np.ndarray): Matrix of dimension num_families x query_length with
+                                    probability score for each family
+        clan_vector (np.ndarray): Matrix of dimension num_clans x query_length with
+                                    probability score for each clan
+    """
+
+
+    # Generate domain map (change to family map later)
+    family_mapping = maps['fam_idx']
+    clan_mapping = maps['clan_idx']
+    fam_clan = maps['fam_clan']
+    
+    # Change this to torch tensor later
+    domain_vector = np.zeros(shape=(len(family_mapping),hmmscan_dict[query_sequence]["length"]),dtype=np.float32)
+    clan_vector = np.zeros(shape=(len(clan_mapping),hmmscan_dict[query_sequence]["length"]),dtype=np.float32)
+
+    # Generate domain vector
+    for i in range(hmmscan_dict[query_sequence]["length"]):
+        domains = identify_domains_at_position(hmmscan_dict, query_sequence, i)
+
+        # If there are no domains at this position, set to 0
+        if len(domains) == 0:
+            domains = [("IDR",1000, "M")] #high score just to make sure IDR has highest mass
+        # Otherwise, calculate the probabilities for the relevant domains
+        else:
+            # If one of the domains at this position contain both M and I states, drop the I states from the domains list
+            if any('I' in domain[2] for domain in domains) and any('M' in domain[2] for domain in domains):
+                domains = [domain for domain in domains if 'M' in domain[2]]
+            
+        # Unzip the domains list
+        domain_names, scores, __ = zip(*domains)
+        # Calculate the probabilities
+        # prob_scores = calculate_prob(scores) # COMMENTED OUT BECAUSE ONLY NEED TO SEE BITSCORES (FOR ROC)
+
+        # Get the index of the domains in the family mapping
+        domain_idx = [family_mapping[domain] for domain in domain_names]
+        clan_dom = [clan_mapping[fam_clan[domain]] for domain in domain_names]
+
+        # Set the probabilities in the domain and clan vectors
+        domain_vector[domain_idx,i] = scores
+        clan_vector[:, i] = modify_clan_vector2(clan_dom, scores, clan_vector[:,i])
     # clan_vector = np.argmax(clan_vector, axis=0) #return indices of max clan probabilities
     
     return domain_vector.T, clan_vector.T
@@ -250,7 +331,7 @@ def parse_hmmscan_results(file_path: str, e_value_threshold: float=0.01, target_
         elif pred:
             hmmscan_dict[result.id] = {}
             hmmscan_dict[result.id]['length'] = result.seq_len
-            hmmscan_dict[result.id]["hit_domains"] = [(-2,-1,50,'IDR', 'M')] # Some dummy IDR data
+            hmmscan_dict[result.id]["hit_domains"] = [(-2,-1,1000,'IDR', 'M')] # Some dummy IDR data
         else:
             continue
 

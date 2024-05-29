@@ -101,23 +101,23 @@ with open(f"{save_path}/log.csv", "w") as log_file:
         te_high_score_hits = []
         for query in SearchIO.parse(output_te_domtbl, 'hmmsearch3-domtab'):
             for hit in query.hits:
-                # for hsp in hit.hsps:
-                    # if hsp.evalue <= float(incE) and hsp.bitscore >= bitscore_threshold:
-                    #     te_high_score_hits.append(f"{hit.id}/{hsp.hit_start+1}-{hsp.hit_end}")
+                for hsp in hit.hsps:
+                    if hsp.evalue <= float(incE) and hsp.bitscore >= bitscore_threshold:
+                        te_high_score_hits.append(f"{hit.id}/{hsp.hit_start+1}-{hsp.hit_end}")
                 # Find the hsp with the smallest evalue
-                best_hsp = min(hit.hsps, key=lambda hsp: hsp.evalue)
-                te_high_score_hits.append(f"{hit.id}/{best_hsp.hit_start+1}-{best_hsp.hit_end}")
+                # best_hsp = min(hit.hsps, key=lambda hsp: hsp.evalue)
+                # te_high_score_hits.append(f"{hit.id}/{best_hsp.hit_start+1}-{best_hsp.hit_end}")
 
         # Open the train domain table file and extract the IDs of the hits that have a bitscore > 30
         tr_high_score_hits = []
         for query in SearchIO.parse(output_tr_domtbl, 'hmmsearch3-domtab'):
             for hit in query.hits:
-                # for hsp in hit.hsps:
-                    # if hsp.evalue <= float(incE) and hsp.bitscore >= bitscore_threshold:
-                    #     tr_high_score_hits.append(f"{hit.id}/{hsp.hit_start+1}-{hsp.hit_end}")
+                for hsp in hit.hsps:
+                    if hsp.evalue <= float(incE) and hsp.bitscore >= bitscore_threshold:
+                        tr_high_score_hits.append(f"{hit.id}/{hsp.hit_start+1}-{hsp.hit_end}")
                 # Find the hsp with the smallest evalue
-                best_hsp = min(hit.hsps, key=lambda hsp: hsp.evalue)
-                tr_high_score_hits.append(f"{hit.id}/{best_hsp.hit_start+1}-{best_hsp.hit_end}")
+                # best_hsp = min(hit.hsps, key=lambda hsp: hsp.evalue)
+                # tr_high_score_hits.append(f"{hit.id}/{best_hsp.hit_start+1}-{best_hsp.hit_end}")
         
         # reformat train and test stocholm files to fasta format
         try:

@@ -59,6 +59,10 @@ def shard_predict_clan(shard, target_path, pred_path, maps):
     target_dict = hu.parse_hmmscan_results(target_path / f'split_{shard}_test_ids_full.fasta_scan.txt')
     pred_dict = hu.parse_hmmscan_results(pred_path / f'split_{shard}_test_ids_full.fasta_scan.txt', pred=True)
 
+    print(len(target_dict))
+    print(len(pred_dict))
+    return
+
     for label in target_dict.keys():
 
         shard_preds[label] = {}
@@ -115,10 +119,10 @@ def hmm_predict():
 
         shard_preds = shard_predict_clan(shard, target_path, pred_path, maps)
 
-        all_preds = all_preds | shard_preds
+        # all_preds = all_preds | shard_preds
 
-    with open(f'../data/results/hmmer_preds_old/clan_results.pkl', 'wb') as f:
-        pickle.dump(all_preds, f)
+    # with open(f'../data/results/hmmer_preds_old/clan_results.pkl', 'wb') as f:
+    #     pickle.dump(all_preds, f)
 
     return
 

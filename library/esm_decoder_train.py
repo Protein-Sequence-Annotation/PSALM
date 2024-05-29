@@ -31,7 +31,7 @@ length_limit = 4096 # Covers 99.75% sequences
 model_name =  'esm2_t33_650M_UR50D' 
 # model_name = 'esm2_t36_3B_UR50D'
 num_shards = 50
-data_utils = mu.DataUtils('../data', num_shards, model_name, length_limit, 'train', device)
+data_utils = mu.DataUtils('../data', num_shards, model_name, length_limit, 'train', device, alt_suffix = "_finetune")
 data_utils.maps['clan_family_matrix'].to(device)
 
 """
@@ -63,9 +63,9 @@ else:
     print('Incorrect Model choice')
     sys.exit(2)
 
-resume = False
+resume = True
 if resume:
-    classifier_path = Path(f'../data/results/no_l1_part3/epoch_5.pth')
+    classifier_path = Path(f'../data/results/fam_onehot_dim_matched/epoch_12.pth')
     classifier.load_state_dict(torch.load(classifier_path))
 
 """
@@ -74,11 +74,11 @@ Parameters for training loop
 
 loss_fn = nn.CrossEntropyLoss() ############ Changed for weighted LSTM
 # loss_fn = nn.BCEWithLogitsLoss(reduction='sum')
-lr = 0.001
+lr = 1e-5 #0.001 ######## LOW FOR FINETUNING!!!!!!!! ##############
 optimizer = torch.optim.Adam(classifier.parameters(), lr=lr)
 scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=0.1, threshold_mode="rel") # lower LR if less than 10% decrease
 
-num_epochs = 30
+num_epochs = 5
 save_path = Path(f'../data/results/{sys.argv[2]}')
 os.makedirs(save_path, exist_ok=True)
 
@@ -89,7 +89,7 @@ run = wandb.init(project='esm2-linear3',
                  entity='eddy_lab',
                  config={"epochs": num_epochs,
                          "lr": lr,
-                         "Architecture": "one_hot basic",
+                         "Architecture": "FAM FINETUNE",
                          "dataset": 'Pfam Seed'})
 
 """
@@ -105,10 +105,12 @@ for epoch in range(num_epochs):
     
     shard_order = np.arange(1,51)
     # shard_gen.shuffle(shard_order) # Use this for reprodcibility of shard order
-    np.random.shuffle(shard_order)
+    # np.random.shuffle(shard_order)
 
     for shard in tqdm(shard_order ,total=data_utils.num_shards, desc='Shards completed'):
-
+        # if data_utils.alt_suffix == "_finetune":
+        #     hmm_dict = None
+        # else:
         hmm_dict = data_utils.parse_shard(shard)
         dataset = data_utils.get_dataset(shard)
         dataset = data_utils.filter_batches(dataset, hmm_dict.keys())
