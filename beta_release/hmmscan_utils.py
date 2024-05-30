@@ -6,7 +6,6 @@ import random
 import glob
 import pickle
 import os
-import sys
 import tqdm as tqdm
 
 ##############################################################################################################

@@ -1,13 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import pickle
+import matplotlib as mpl
 
-def viewAll(seq, results_clan, results_fam, fam_keys, clan_keys, pid_dict_pkl, threshold):
-
-    with open(f'info_files/{pid_dict_pkl}', 'rb') as f:
-        pid_dict = pickle.load(f)
-    
-    import matplotlib as mpl
+def viewAll(seq, results_clan, results_fam, fam_keys, clan_keys, threshold):
 
     ##########################################
     # Color generation
@@ -92,7 +87,7 @@ def viewAll(seq, results_clan, results_fam, fam_keys, clan_keys, pid_dict_pkl, t
     ax2.set_title(f'Sequence {seq}')
 
     ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    ax3.legend(loc='upper left', bbox_to_anchor=(1, 0.5))
+    ax3.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
     ax2.set_ylabel('PSALM fam')
     ax3.set_ylabel('PSALM clan')

@@ -1,4 +1,3 @@
-import hmmscan_utils as hu
 import classifiers as cf
 import ml_utils as mu
 from parsers import single_parser
@@ -25,7 +24,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 length_limit = 4096 # Covers 99.75% sequences
 esm_model_name =  'esm2_t33_650M_UR50D'
 num_shards = args.num_shards
-data_utils = mu.DataUtils(f'{args.root}', num_shards, esm_model_name, length_limit, 'test', device,"_OLD")
+data_utils = mu.DataUtils(f'{args.root}', num_shards, esm_model_name, length_limit, 'test', device, alt_suffix=args.suffix)
 
 fam_classifier = cf.FamLSTM(data_utils.embedding_dim, data_utils.maps, device).to(device)
 fam_classifier.load_state_dict(torch.load(args.fam_filename))
@@ -52,6 +51,8 @@ with torch.inference_mode():
         seq_id = 'I4D8X5.1' # Select specific sequence from this shard
         shard = shard_seqs[seq_id]
         hmm_dict = data_utils.parse_shard(shard)
+
+        
         dataset = data_utils.get_dataset(shard)
         dataset = data_utils.filter_batches(dataset, [seq_id]) ############### Need to fix this filtering
     else:
@@ -106,6 +107,6 @@ with torch.inference_mode():
 
     results_clan['label'] = seq_id
 
-fig = vz.viewAll(seq_id, results_clan, results_fam, fam_map, clan_map, 'test_pids.pkl', args.thresh)
+fig = vz.viewAll(seq_id, results_clan, results_fam, fam_map, clan_map, args.thresh)
 fig.savefig(f"results/plots/{seq_id.replace('.', '_')}.png")
 plt.close(fig)

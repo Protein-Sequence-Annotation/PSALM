@@ -40,7 +40,7 @@ length_limit = 4096 # Covers 99.75% sequences
 esm_model_name =  'esm2_t33_650M_UR50D' 
 
 num_shards = args.num_shards
-data_utils = mu.DataUtils(args.root, num_shards, esm_model_name, length_limit, 'train', device, alt_suffix = "_finetune")
+data_utils = mu.DataUtils(args.root, num_shards, esm_model_name, length_limit, 'train', device, alt_suffix = args.suffix)
 data_utils.maps['clan_family_matrix'].to(device)
 
 """

@@ -1,6 +1,6 @@
 import pickle
 from pathlib import Path
-import os, sys
+import os
 from tqdm import tqdm
 
 import torch
@@ -35,7 +35,7 @@ Instantiate dataset helper object
 length_limit = 4096 # Covers 99.75% sequences
 esm_model_name =  'esm2_t33_650M_UR50D'
 num_shards = args.num_shards # Number of shards
-data_utils = mu.DataUtils(args.root, num_shards, esm_model_name, length_limit, 'test', device, '') # Running on old test for now
+data_utils = mu.DataUtils(args.root, num_shards, esm_model_name, length_limit, 'test', device, alt_suffix=args.suffix) # Running on old test for now
 
 """
 Model choice based on user input
