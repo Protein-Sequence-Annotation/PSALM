@@ -1,0 +1,12 @@
+Metadata-Version: 2.1
+Name: protein-sequence-annotation
+Version: 0.2.4
+Summary: Protein sequence annotation with language models
+Home-page: https://github.com/Protein-Sequence-Annotation/PSALM
+Author: Arpan Sarkar & Kumaresh Krishnan
+Author-email: arpan_sarkar@g.harvard.edu
+License: CC by 4.0
+Requires-Python: >=3.10
+Requires-Dist: huggingface-hub>=0.23.2
+Requires-Dist: safetensors>=0.4.3
+Requires-Dist: fair-esm>=2.0.0

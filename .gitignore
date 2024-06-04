@@ -5,3 +5,8 @@ dev/bash_scripts/
 dev/misc/
 combo_commit.sh
 beta_release/models/
+beta_release/.ipynb_checkpoints/
+beta_release/PSALM_1/
+beta_release/PSALM-1-clan/
+beta_release/PSALM-1-family/
+beta_release/hf_upload_test.ipynb
