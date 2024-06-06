@@ -10,3 +10,5 @@ beta_release/PSALM_1/
 beta_release/PSALM-1-clan/
 beta_release/PSALM-1-family/
 beta_release/hf_upload_test.ipynb
+protein_sequence_annotation/build/lib/psalm/
+protein_sequence_annotation/protein_sequence_annotation.egg-info/
