@@ -1,0 +1,5 @@
+huggingface-hub>=0.23.2
+safetensors>=0.4.3
+fair-esm>=2.0.0
+matplotlib>=3.8.2
+biopython>=1.83
