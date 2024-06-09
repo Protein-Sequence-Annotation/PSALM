@@ -1,9 +1,14 @@
 from setuptools import setup, find_packages
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
 setup(
     name='protein-sequence-annotation',
-    version='1.0.3',
+    version='1.0.5',
     description='Protein sequence annotation with language models',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     url='https://github.com/Protein-Sequence-Annotation/PSALM',
     packages=find_packages(),
     install_requires=[

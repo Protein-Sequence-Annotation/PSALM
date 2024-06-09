@@ -1,19 +1,3 @@
-Metadata-Version: 2.1
-Name: protein-sequence-annotation
-Version: 1.0.5
-Summary: Protein sequence annotation with language models
-Home-page: https://github.com/Protein-Sequence-Annotation/PSALM
-Author: Arpan Sarkar & Kumaresh Krishnan
-Author-email: arpan_sarkar@g.harvard.edu
-License: CC by 4.0
-Requires-Python: >=3.10
-Description-Content-Type: text/markdown
-Requires-Dist: huggingface-hub>=0.23.2
-Requires-Dist: safetensors>=0.4.3
-Requires-Dist: fair-esm>=2.0.0
-Requires-Dist: matplotlib>=3.8.2
-Requires-Dist: biopython>=1.83
-
 # PSALM
 This package contains code and pre-trained weights for Protein Sequence Annotation with Language Models (PSALM) from our [2024 preprint](https://www.biorxiv.org/content/10.1101/2024.06.04.596712v1).
 
