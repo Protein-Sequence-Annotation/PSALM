@@ -1,0 +1,14 @@
+
+Shards completed:   0%|          | 0/4 [00:40<?, ?it/s]
+Traceback (most recent call last):
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train.py", line 116, in <module>
+    shard_loss, n_batches = train_fn(data_loader = data_loader,
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/ml_utils.py", line 334, in train_step_clan_batch
+    target_vectors = np.zeros((len(sequence_labels), embedding.shape[1]))
+AttributeError: 'dict' object has no attribute 'shape'
+Traceback (most recent call last):
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train.py", line 116, in <module>
+    shard_loss, n_batches = train_fn(data_loader = data_loader,
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/ml_utils.py", line 334, in train_step_clan_batch
+    target_vectors = np.zeros((len(sequence_labels), embedding.shape[1]))
+AttributeError: 'dict' object has no attribute 'shape'

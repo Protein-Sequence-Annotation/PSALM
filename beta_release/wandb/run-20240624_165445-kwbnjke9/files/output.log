@@ -1,0 +1,29 @@
+Traceback (most recent call last):
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train.py", line 102, in <module>
+    hmm_dict = data_utils.parse_shard('val') # Match this file name in the data
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/ml_utils.py", line 183, in parse_shard
+    hmmscan_dict = hu.parse_hmmscan_results(self.scan_path / f'split_{idx}_{self.mode}_ids_full.fasta_scan.txt')
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/hmmscan_utils.py", line 200, in parse_hmmscan_results
+    for result in hmmscan_results:
+  File "/n/home05/kumareshk/.local/lib/python3.10/site-packages/Bio/SearchIO/__init__.py", line 300, in parse
+    with as_handle(handle, **handle_kwargs) as source_file:
+  File "/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/contextlib.py", line 135, in __enter__
+    return next(self.gen)
+  File "/n/home05/kumareshk/.local/lib/python3.10/site-packages/Bio/File.py", line 72, in as_handle
+    with open(handleish, mode, **kwargs) as fp:
+FileNotFoundError: [Errno 2] No such file or directory: '../dev/data/train_scan/split_val_train_ids_full.fasta_scan.txt'
+Traceback (most recent call last):
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train.py", line 102, in <module>
+    hmm_dict = data_utils.parse_shard('val') # Match this file name in the data
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/ml_utils.py", line 183, in parse_shard
+    hmmscan_dict = hu.parse_hmmscan_results(self.scan_path / f'split_{idx}_{self.mode}_ids_full.fasta_scan.txt')
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/hmmscan_utils.py", line 200, in parse_hmmscan_results
+    for result in hmmscan_results:
+  File "/n/home05/kumareshk/.local/lib/python3.10/site-packages/Bio/SearchIO/__init__.py", line 300, in parse
+    with as_handle(handle, **handle_kwargs) as source_file:
+  File "/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/contextlib.py", line 135, in __enter__
+    return next(self.gen)
+  File "/n/home05/kumareshk/.local/lib/python3.10/site-packages/Bio/File.py", line 72, in as_handle
+    with open(handleish, mode, **kwargs) as fp:
+FileNotFoundError: [Errno 2] No such file or directory: '../dev/data/train_scan/split_val_train_ids_full.fasta_scan.txt'
+True

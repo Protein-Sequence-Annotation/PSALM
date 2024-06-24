@@ -1,0 +1,195 @@
+2024-06-24 15:35:00,793 INFO    StreamThr :3200725 [internal.py:wandb_internal():86] W&B internal server running at pid: 3200725, started at: 2024-06-24 15:35:00.791503
+2024-06-24 15:35:00,793 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: status
+2024-06-24 15:35:00,855 INFO    WriterThread:3200725 [datastore.py:open_for_write():87] open: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/run-txer5c80.wandb
+2024-06-24 15:35:00,857 DEBUG   SenderThread:3200725 [sender.py:send():382] send: header
+2024-06-24 15:35:00,897 DEBUG   SenderThread:3200725 [sender.py:send():382] send: run
+2024-06-24 15:35:01,189 INFO    SenderThread:3200725 [dir_watcher.py:__init__():211] watching files in: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files
+2024-06-24 15:35:01,189 INFO    SenderThread:3200725 [sender.py:_start_run_threads():1136] run started: txer5c80 with start time 1719257700.82261
+2024-06-24 15:35:01,218 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: check_version
+2024-06-24 15:35:01,219 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: check_version
+2024-06-24 15:35:01,294 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: run_start
+2024-06-24 15:35:01,320 DEBUG   HandlerThread:3200725 [system_info.py:__init__():27] System info init
+2024-06-24 15:35:01,320 DEBUG   HandlerThread:3200725 [system_info.py:__init__():42] System info init done
+2024-06-24 15:35:01,320 INFO    HandlerThread:3200725 [system_monitor.py:start():194] Starting system monitor
+2024-06-24 15:35:01,320 INFO    SystemMonitor:3200725 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2024-06-24 15:35:01,321 INFO    HandlerThread:3200725 [system_monitor.py:probe():214] Collecting system info
+2024-06-24 15:35:01,331 INFO    SystemMonitor:3200725 [interfaces.py:start():190] Started cpu monitoring
+2024-06-24 15:35:01,334 INFO    SystemMonitor:3200725 [interfaces.py:start():190] Started disk monitoring
+2024-06-24 15:35:01,335 INFO    SystemMonitor:3200725 [interfaces.py:start():190] Started gpu monitoring
+2024-06-24 15:35:01,335 INFO    SystemMonitor:3200725 [interfaces.py:start():190] Started memory monitoring
+2024-06-24 15:35:01,336 INFO    SystemMonitor:3200725 [interfaces.py:start():190] Started network monitoring
+2024-06-24 15:35:01,336 DEBUG   HandlerThread:3200725 [system_info.py:probe():151] Probing system
+2024-06-24 15:35:01,339 DEBUG   HandlerThread:3200725 [system_info.py:_probe_git():136] Probing git
+2024-06-24 15:35:01,373 DEBUG   HandlerThread:3200725 [system_info.py:_probe_git():144] Probing git done
+2024-06-24 15:35:01,373 DEBUG   HandlerThread:3200725 [system_info.py:probe():199] Probing system done
+2024-06-24 15:35:01,373 DEBUG   HandlerThread:3200725 [system_monitor.py:probe():223] {'os': 'Linux-4.18.0-513.18.1.el8_9.x86_64-x86_64-with-glibc2.28', 'python': '3.10.0', 'heartbeatAt': '2024-06-24T19:35:01.336333', 'startedAt': '2024-06-24T19:35:00.747578', 'docker': None, 'cuda': None, 'args': ('-m', 'clan', '-rt', '../dev/data', '-o', 'models/batch_clan', '-l', 'True', '-ne', '30', '-lr', '0.001', '-v', 'False', '-p', 'esm2-linear3', '-ns', '4'), 'state': 'running', 'program': '/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train.py', 'codePathLocal': 'psalm_train.py', 'codePath': 'beta_release/psalm_train.py', 'git': {'remote': 'git@github.com:Protein-Sequence-Annotation/PSALM.git', 'commit': '3a0b30c8fef6f1fe15ed748152c0405b711aebd5'}, 'email': 'arpan_sarkar@g.harvard.edu', 'root': '/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM', 'host': 'holygpu7c0920.rc.fas.harvard.edu', 'username': 'kumareshk', 'executable': '/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/bin/python', 'cpu_count': 48, 'cpu_count_logical': 48, 'cpu_freq': {'current': 3305.0028750000038, 'min': 0.0, 'max': 0.0}, 'cpu_freq_per_core': [{'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3992.686, 'min': 0.0, 'max': 0.0}, {'current': 3992.245, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3992.12, 'min': 0.0, 'max': 0.0}, {'current': 3992.571, 'min': 0.0, 'max': 0.0}, {'current': 3992.32, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3992.244, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3725.515, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}], 'disk': {'/': {'total': 49.9755859375, 'used': 13.501598358154297}}, 'gpu': 'NVIDIA A100-SXM4-80GB', 'gpu_count': 1, 'gpu_devices': [{'name': 'NVIDIA A100-SXM4-80GB', 'memory_total': 85899345920}], 'memory': {'total': 1006.9827156066895}}
+2024-06-24 15:35:01,373 INFO    HandlerThread:3200725 [system_monitor.py:probe():224] Finished collecting system info
+2024-06-24 15:35:01,373 INFO    HandlerThread:3200725 [system_monitor.py:probe():227] Publishing system info
+2024-06-24 15:35:01,373 DEBUG   HandlerThread:3200725 [system_info.py:_save_conda():208] Saving list of conda packages installed into the current environment
+2024-06-24 15:35:02,191 INFO    Thread-13 :3200725 [dir_watcher.py:_on_file_created():271] file/dir created: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/conda-environment.yaml
+2024-06-24 15:35:10,017 DEBUG   HandlerThread:3200725 [system_info.py:_save_conda():220] Saving conda packages done
+2024-06-24 15:35:10,022 INFO    HandlerThread:3200725 [system_monitor.py:probe():229] Finished publishing system info
+2024-06-24 15:35:10,075 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: status_report
+2024-06-24 15:35:10,076 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: keepalive
+2024-06-24 15:35:10,076 DEBUG   SenderThread:3200725 [sender.py:send():382] send: files
+2024-06-24 15:35:10,076 INFO    SenderThread:3200725 [sender.py:_save_file():1403] saving file wandb-metadata.json with policy now
+2024-06-24 15:35:10,103 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: python_packages
+2024-06-24 15:35:10,103 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: python_packages
+2024-06-24 15:35:10,104 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: stop_status
+2024-06-24 15:35:10,105 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: internal_messages
+2024-06-24 15:35:10,107 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: stop_status
+2024-06-24 15:35:10,237 INFO    Thread-13 :3200725 [dir_watcher.py:_on_file_modified():288] file/dir modified: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/conda-environment.yaml
+2024-06-24 15:35:10,238 INFO    Thread-13 :3200725 [dir_watcher.py:_on_file_created():271] file/dir created: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/wandb-metadata.json
+2024-06-24 15:35:10,238 INFO    Thread-13 :3200725 [dir_watcher.py:_on_file_created():271] file/dir created: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/requirements.txt
+2024-06-24 15:35:10,265 DEBUG   SenderThread:3200725 [sender.py:send():382] send: telemetry
+2024-06-24 15:35:10,390 INFO    wandb-upload_0:3200725 [upload_job.py:push():131] Uploaded file /tmp/tmps9rm3ydvwandb/a7srf6b1-wandb-metadata.json
+2024-06-24 15:35:11,245 INFO    Thread-13 :3200725 [dir_watcher.py:_on_file_created():271] file/dir created: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/output.log
+2024-06-24 15:35:12,279 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: status_report
+2024-06-24 15:35:13,287 INFO    Thread-13 :3200725 [dir_watcher.py:_on_file_modified():288] file/dir modified: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/output.log
+2024-06-24 15:35:17,295 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: status_report
+2024-06-24 15:35:18,502 DEBUG   SenderThread:3200725 [sender.py:send():382] send: exit
+2024-06-24 15:35:18,503 INFO    SenderThread:3200725 [sender.py:send_exit():589] handling exit code: 1
+2024-06-24 15:35:18,503 INFO    SenderThread:3200725 [sender.py:send_exit():591] handling runtime: 17
+2024-06-24 15:35:18,508 INFO    SenderThread:3200725 [sender.py:_save_file():1403] saving file wandb-summary.json with policy end
+2024-06-24 15:35:18,508 INFO    SenderThread:3200725 [sender.py:send_exit():597] send defer
+2024-06-24 15:35:18,508 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:18,508 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 0
+2024-06-24 15:35:18,508 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:18,508 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 0
+2024-06-24 15:35:18,508 INFO    SenderThread:3200725 [sender.py:transition_state():617] send defer: 1
+2024-06-24 15:35:18,508 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:18,508 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 1
+2024-06-24 15:35:18,508 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:18,508 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 1
+2024-06-24 15:35:18,508 INFO    SenderThread:3200725 [sender.py:transition_state():617] send defer: 2
+2024-06-24 15:35:18,508 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:18,508 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 2
+2024-06-24 15:35:18,508 INFO    HandlerThread:3200725 [system_monitor.py:finish():203] Stopping system monitor
+2024-06-24 15:35:18,508 DEBUG   SystemMonitor:3200725 [system_monitor.py:_start():172] Starting system metrics aggregation loop
+2024-06-24 15:35:18,508 DEBUG   SystemMonitor:3200725 [system_monitor.py:_start():179] Finished system metrics aggregation loop
+2024-06-24 15:35:18,508 DEBUG   SystemMonitor:3200725 [system_monitor.py:_start():183] Publishing last batch of metrics
+2024-06-24 15:35:18,519 INFO    HandlerThread:3200725 [interfaces.py:finish():202] Joined cpu monitor
+2024-06-24 15:35:18,519 INFO    HandlerThread:3200725 [interfaces.py:finish():202] Joined disk monitor
+2024-06-24 15:35:18,640 INFO    HandlerThread:3200725 [interfaces.py:finish():202] Joined gpu monitor
+2024-06-24 15:35:18,640 INFO    HandlerThread:3200725 [interfaces.py:finish():202] Joined memory monitor
+2024-06-24 15:35:18,640 INFO    HandlerThread:3200725 [interfaces.py:finish():202] Joined network monitor
+2024-06-24 15:35:18,640 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:18,640 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 2
+2024-06-24 15:35:18,640 INFO    SenderThread:3200725 [sender.py:transition_state():617] send defer: 3
+2024-06-24 15:35:18,640 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:18,640 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 3
+2024-06-24 15:35:18,641 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:18,641 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 3
+2024-06-24 15:35:18,641 INFO    SenderThread:3200725 [sender.py:transition_state():617] send defer: 4
+2024-06-24 15:35:18,641 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:18,641 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 4
+2024-06-24 15:35:18,641 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:18,641 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 4
+2024-06-24 15:35:18,641 INFO    SenderThread:3200725 [sender.py:transition_state():617] send defer: 5
+2024-06-24 15:35:18,641 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:18,641 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 5
+2024-06-24 15:35:18,641 DEBUG   SenderThread:3200725 [sender.py:send():382] send: summary
+2024-06-24 15:35:18,646 INFO    SenderThread:3200725 [sender.py:_save_file():1403] saving file wandb-summary.json with policy end
+2024-06-24 15:35:18,646 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:18,646 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 5
+2024-06-24 15:35:18,646 INFO    SenderThread:3200725 [sender.py:transition_state():617] send defer: 6
+2024-06-24 15:35:18,646 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:18,646 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 6
+2024-06-24 15:35:18,646 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:18,646 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 6
+2024-06-24 15:35:18,649 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: status_report
+2024-06-24 15:35:18,865 INFO    SenderThread:3200725 [sender.py:transition_state():617] send defer: 7
+2024-06-24 15:35:18,865 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:18,865 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 7
+2024-06-24 15:35:18,865 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:18,865 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 7
+2024-06-24 15:35:19,385 INFO    Thread-13 :3200725 [dir_watcher.py:_on_file_modified():288] file/dir modified: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/config.yaml
+2024-06-24 15:35:19,385 INFO    Thread-13 :3200725 [dir_watcher.py:_on_file_created():271] file/dir created: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/wandb-summary.json
+2024-06-24 15:35:19,503 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-24 15:35:20,287 INFO    SenderThread:3200725 [sender.py:transition_state():617] send defer: 8
+2024-06-24 15:35:20,288 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: poll_exit
+2024-06-24 15:35:20,288 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:20,288 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 8
+2024-06-24 15:35:20,288 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:20,288 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 8
+2024-06-24 15:35:20,288 INFO    SenderThread:3200725 [job_builder.py:build():296] Attempting to build job artifact
+2024-06-24 15:35:20,289 INFO    SenderThread:3200725 [job_builder.py:_get_source_type():426] is repo sourced job
+2024-06-24 15:35:20,329 INFO    SenderThread:3200725 [job_builder.py:build():402] adding wandb-job metadata file
+2024-06-24 15:35:20,385 INFO    Thread-13 :3200725 [dir_watcher.py:_on_file_modified():288] file/dir modified: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/output.log
+2024-06-24 15:35:20,393 INFO    SenderThread:3200725 [sender.py:transition_state():617] send defer: 9
+2024-06-24 15:35:20,393 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:20,393 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 9
+2024-06-24 15:35:20,394 DEBUG   SenderThread:3200725 [sender.py:send():382] send: artifact
+2024-06-24 15:35:20,503 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-24 15:35:21,088 INFO    wandb-upload_0:3200725 [upload_job.py:push():89] Uploaded file /n/home05/kumareshk/.local/share/wandb/artifacts/staging/tmpg30r6y17
+2024-06-24 15:35:21,093 INFO    wandb-upload_1:3200725 [upload_job.py:push():89] Uploaded file /n/home05/kumareshk/.local/share/wandb/artifacts/staging/tmpp9g_ddf9
+2024-06-24 15:35:21,734 INFO    SenderThread:3200725 [sender.py:send_artifact():1494] sent artifact job-git_github.com_Protein-Sequence-Annotation_PSALM.git_beta_release_psalm_train.py - {'id': 'QXJ0aWZhY3Q6OTIxNDU1NDc5', 'state': 'PENDING', 'artifactSequence': {'id': 'QXJ0aWZhY3RDb2xsZWN0aW9uOjIyOTAwNzI2NQ==', 'latestArtifact': None}}
+2024-06-24 15:35:21,735 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:21,735 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 9
+2024-06-24 15:35:21,735 INFO    SenderThread:3200725 [dir_watcher.py:finish():358] shutting down directory watcher
+2024-06-24 15:35:22,387 INFO    SenderThread:3200725 [dir_watcher.py:finish():388] scan: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files
+2024-06-24 15:35:22,387 INFO    SenderThread:3200725 [dir_watcher.py:finish():402] scan save: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/conda-environment.yaml conda-environment.yaml
+2024-06-24 15:35:22,387 INFO    SenderThread:3200725 [dir_watcher.py:finish():402] scan save: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/config.yaml config.yaml
+2024-06-24 15:35:22,387 INFO    SenderThread:3200725 [dir_watcher.py:finish():402] scan save: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/wandb-metadata.json wandb-metadata.json
+2024-06-24 15:35:22,387 INFO    SenderThread:3200725 [dir_watcher.py:finish():402] scan save: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/requirements.txt requirements.txt
+2024-06-24 15:35:22,387 INFO    SenderThread:3200725 [dir_watcher.py:finish():402] scan save: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/output.log output.log
+2024-06-24 15:35:22,387 INFO    SenderThread:3200725 [dir_watcher.py:finish():402] scan save: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/wandb-summary.json wandb-summary.json
+2024-06-24 15:35:22,387 INFO    SenderThread:3200725 [sender.py:transition_state():617] send defer: 10
+2024-06-24 15:35:22,387 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: poll_exit
+2024-06-24 15:35:22,388 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:22,388 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 10
+2024-06-24 15:35:22,388 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:22,388 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 10
+2024-06-24 15:35:22,388 INFO    SenderThread:3200725 [file_pusher.py:finish():172] shutting down file pusher
+2024-06-24 15:35:22,504 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-24 15:35:22,504 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: poll_exit
+2024-06-24 15:35:22,598 INFO    wandb-upload_1:3200725 [upload_job.py:push():131] Uploaded file /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/config.yaml
+2024-06-24 15:35:22,645 INFO    wandb-upload_0:3200725 [upload_job.py:push():131] Uploaded file /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/conda-environment.yaml
+2024-06-24 15:35:22,699 INFO    wandb-upload_2:3200725 [upload_job.py:push():131] Uploaded file /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/requirements.txt
+2024-06-24 15:35:22,708 INFO    wandb-upload_4:3200725 [upload_job.py:push():131] Uploaded file /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/wandb-summary.json
+2024-06-24 15:35:22,711 INFO    wandb-upload_3:3200725 [upload_job.py:push():131] Uploaded file /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/files/output.log
+2024-06-24 15:35:22,911 INFO    Thread-12 (_thread_body):3200725 [sender.py:transition_state():617] send defer: 11
+2024-06-24 15:35:22,912 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:22,912 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 11
+2024-06-24 15:35:22,912 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:22,912 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 11
+2024-06-24 15:35:22,912 INFO    SenderThread:3200725 [file_pusher.py:join():178] waiting for file pusher
+2024-06-24 15:35:22,912 INFO    SenderThread:3200725 [sender.py:transition_state():617] send defer: 12
+2024-06-24 15:35:22,912 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:22,912 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 12
+2024-06-24 15:35:22,912 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:22,913 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 12
+2024-06-24 15:35:22,913 INFO    SenderThread:3200725 [file_stream.py:finish():595] file stream finish called
+2024-06-24 15:35:22,985 INFO    SenderThread:3200725 [file_stream.py:finish():599] file stream finish is done
+2024-06-24 15:35:22,985 INFO    SenderThread:3200725 [sender.py:transition_state():617] send defer: 13
+2024-06-24 15:35:22,985 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:22,985 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 13
+2024-06-24 15:35:22,986 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:22,986 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 13
+2024-06-24 15:35:22,986 INFO    SenderThread:3200725 [sender.py:transition_state():617] send defer: 14
+2024-06-24 15:35:22,986 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: defer
+2024-06-24 15:35:22,986 INFO    HandlerThread:3200725 [handler.py:handle_request_defer():172] handle defer: 14
+2024-06-24 15:35:22,986 DEBUG   SenderThread:3200725 [sender.py:send():382] send: final
+2024-06-24 15:35:22,986 DEBUG   SenderThread:3200725 [sender.py:send():382] send: footer
+2024-06-24 15:35:22,986 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: defer
+2024-06-24 15:35:22,986 INFO    SenderThread:3200725 [sender.py:send_request_defer():613] handle sender defer: 14
+2024-06-24 15:35:22,987 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-24 15:35:22,987 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-24 15:35:22,987 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: server_info
+2024-06-24 15:35:22,987 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: get_summary
+2024-06-24 15:35:22,987 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: sampled_history
+2024-06-24 15:35:22,987 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: internal_messages
+2024-06-24 15:35:22,987 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: job_info
+2024-06-24 15:35:22,987 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: poll_exit
+2024-06-24 15:35:22,987 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: poll_exit
+2024-06-24 15:35:22,987 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: server_info
+2024-06-24 15:35:23,051 DEBUG   SenderThread:3200725 [sender.py:send_request():409] send_request: job_info
+2024-06-24 15:35:23,051 INFO    MainThread:3200725 [wandb_run.py:_footer_history_summary_info():3866] rendering history
+2024-06-24 15:35:23,051 INFO    MainThread:3200725 [wandb_run.py:_footer_history_summary_info():3898] rendering summary
+2024-06-24 15:35:23,051 INFO    MainThread:3200725 [wandb_run.py:_footer_sync_info():3825] logging synced files
+2024-06-24 15:35:23,051 DEBUG   HandlerThread:3200725 [handler.py:handle_request():146] handle_request: shutdown
+2024-06-24 15:35:23,051 INFO    HandlerThread:3200725 [handler.py:finish():869] shutting down handler
+2024-06-24 15:35:23,987 INFO    WriterThread:3200725 [datastore.py:close():296] close: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_153500-txer5c80/run-txer5c80.wandb
+2024-06-24 15:35:24,051 INFO    SenderThread:3200725 [sender.py:finish():1572] shutting down sender
+2024-06-24 15:35:24,051 INFO    SenderThread:3200725 [file_pusher.py:finish():172] shutting down file pusher
+2024-06-24 15:35:24,051 INFO    SenderThread:3200725 [file_pusher.py:join():178] waiting for file pusher

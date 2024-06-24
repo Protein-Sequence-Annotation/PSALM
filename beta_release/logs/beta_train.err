@@ -1,0 +1,365 @@
+
+The following have been reloaded with a version change:
+  1) cuda/12.2.0-fasrc01 => cuda/12.4.1-fasrc01
+
+Shards completed:   0%|          | 0/50 [00:00<?, ?it/s]AUTOTUNE mm(4108x1280, 1280x1280)
+  triton_mm_6253 0.1485 ms 100.0%
+  triton_mm_6254 0.1516 ms 98.0%
+  mm 0.1608 ms 92.4%
+  triton_mm_6255 0.1669 ms 89.0%
+  triton_mm_6256 0.1690 ms 87.9%
+  triton_mm_6252 0.2007 ms 74.0%
+  triton_mm_6260 0.2089 ms 71.1%
+  triton_mm_6262 0.2140 ms 69.4%
+  triton_mm_6259 0.2540 ms 58.5%
+  triton_mm_6258 0.2755 ms 53.9%
+SingleProcess AUTOTUNE takes 1.6765 seconds
+AUTOTUNE addmm(4108x1280, 4108x1280, 1280x1280)
+  bias_addmm 0.1434 ms 100.0%
+  triton_mm_6265 0.1485 ms 96.6%
+  triton_mm_6266 0.1526 ms 94.0%
+  triton_mm_6267 0.1690 ms 84.8%
+  addmm 0.1720 ms 83.3%
+  triton_mm_6268 0.1720 ms 83.3%
+  triton_mm_6264 0.2017 ms 71.1%
+  triton_mm_6272 0.2109 ms 68.0%
+  triton_mm_6274 0.2150 ms 66.7%
+  triton_mm_6271 0.2560 ms 56.0%
+SingleProcess AUTOTUNE takes 1.8257 seconds
+AUTOTUNE addmm(4108x5120, 4108x1280, 1280x5120)
+  bias_addmm 0.4813 ms 100.0%
+  triton_mm_6301 0.5304 ms 90.7%
+  triton_mm_6302 0.5345 ms 90.0%
+  addmm 0.5396 ms 89.2%
+  triton_mm_6303 0.5868 ms 82.0%
+  triton_mm_6304 0.5929 ms 81.2%
+  triton_mm_6300 0.7424 ms 64.8%
+  triton_mm_6308 0.7834 ms 61.4%
+  triton_mm_6310 0.8018 ms 60.0%
+  triton_mm_6307 0.8356 ms 57.6%
+SingleProcess AUTOTUNE takes 1.9073 seconds
+AUTOTUNE mm(4108x5120, 5120x1280)
+  mm 0.5018 ms 100.0%
+  triton_mm_6313 0.5478 ms 91.6%
+  triton_mm_6314 0.5683 ms 88.3%
+  triton_mm_6315 0.6042 ms 83.1%
+  triton_mm_6316 0.6093 ms 82.4%
+  triton_mm_6320 0.7501 ms 66.9%
+  triton_mm_6312 0.7941 ms 63.2%
+  triton_mm_6322 0.8141 ms 61.6%
+  triton_mm_6319 0.9646 ms 52.0%
+  triton_mm_6318 1.0363 ms 48.4%
+SingleProcess AUTOTUNE takes 1.8289 seconds
+AUTOTUNE bmm(26x158x1280, 26x1280x1280)
+  triton_bmm_8629 0.1731 ms 100.0%
+  bmm 0.1812 ms 95.5%
+  triton_bmm_8631 0.1925 ms 89.9%
+  triton_bmm_8630 0.2212 ms 78.2%
+  triton_bmm_8638 0.2406 ms 71.9%
+  triton_bmm_8632 0.2427 ms 71.3%
+  triton_bmm_8628 0.2488 ms 69.5%
+  triton_bmm_8636 0.2519 ms 68.7%
+  triton_bmm_8634 0.2796 ms 61.9%
+  triton_bmm_8635 0.3205 ms 54.0%
+SingleProcess AUTOTUNE takes 1.7131 seconds
+AUTOTUNE mm(4108x1280, 1280x33)
+  triton_mm_8648 0.0297 ms 100.0%
+  triton_mm_8643 0.0317 ms 93.5%
+  triton_mm_8644 0.0338 ms 87.9%
+  triton_mm_8641 0.0348 ms 85.3%
+  triton_mm_8645 0.0358 ms 82.9%
+  triton_mm_8646 0.0369 ms 80.6%
+  triton_mm_8642 0.0379 ms 78.4%
+  triton_mm_8649 0.0379 ms 78.4%
+  mm 0.0389 ms 76.3%
+  triton_mm_8640 0.0522 ms 56.9%
+SingleProcess AUTOTUNE takes 1.6046 seconds
+AUTOTUNE mm(2057x1280, 1280x1280)
+  mm 0.0829 ms 100.0%
+  triton_mm_8653 0.0911 ms 91.0%
+  triton_mm_8654 0.0922 ms 90.0%
+  triton_mm_8655 0.0993 ms 83.5%
+  triton_mm_8656 0.1004 ms 82.7%
+  triton_mm_8660 0.1178 ms 70.4%
+  triton_mm_8652 0.1198 ms 69.2%
+  triton_mm_8662 0.1321 ms 62.8%
+  triton_mm_8659 0.1331 ms 62.3%
+  triton_mm_8658 0.1495 ms 55.5%
+SingleProcess AUTOTUNE takes 4.9091 seconds
+AUTOTUNE addmm(2057x1280, 2057x1280, 1280x1280)
+  bias_addmm 0.0748 ms 100.0%
+  addmm 0.0901 ms 83.0%
+  triton_mm_8665 0.0911 ms 82.0%
+  triton_mm_8666 0.0922 ms 81.1%
+  triton_mm_8667 0.1004 ms 74.5%
+  triton_mm_8668 0.1004 ms 74.5%
+  triton_mm_8672 0.1188 ms 62.9%
+  triton_mm_8664 0.1208 ms 61.9%
+  triton_mm_8674 0.1331 ms 56.2%
+  triton_mm_8671 0.1341 ms 55.7%
+SingleProcess AUTOTUNE takes 5.2286 seconds
+AUTOTUNE mm(2057x1280, 1280x5120)
+  mm 0.2499 ms 100.0%
+  triton_mm_8701 0.2806 ms 89.1%
+  triton_mm_8702 0.2898 ms 86.2%
+  triton_mm_8703 0.3092 ms 80.8%
+  triton_mm_8704 0.3133 ms 79.7%
+  triton_mm_8700 0.3963 ms 63.0%
+  triton_mm_8708 0.4096 ms 61.0%
+  triton_mm_8710 0.4229 ms 59.1%
+  triton_mm_8707 0.4536 ms 55.1%
+  triton_mm_8706 0.5437 ms 46.0%
+SingleProcess AUTOTUNE takes 4.9211 seconds
+AUTOTUNE mm(2057x5120, 5120x1280)
+  mm 0.2550 ms 100.0%
+  triton_mm_8713 0.3328 ms 76.6%
+  triton_mm_8714 0.3379 ms 75.5%
+  triton_mm_8715 0.3492 ms 73.0%
+  triton_mm_8716 0.3502 ms 72.8%
+  triton_mm_8720 0.4116 ms 61.9%
+  triton_mm_8712 0.4280 ms 59.6%
+  triton_mm_8719 0.4915 ms 51.9%
+  triton_mm_8722 0.5233 ms 48.7%
+  triton_mm_8718 0.5550 ms 45.9%
+SingleProcess AUTOTUNE takes 4.5633 seconds
+AUTOTUNE mm(2057x1280, 1280x33)
+  triton_mm_11045 0.0215 ms 100.0%
+  triton_mm_11046 0.0225 ms 95.5%
+  triton_mm_11048 0.0256 ms 84.0%
+  triton_mm_11049 0.0256 ms 84.0%
+  triton_mm_11043 0.0266 ms 80.8%
+  mm 0.0287 ms 75.0%
+  triton_mm_11044 0.0317 ms 67.7%
+  triton_mm_11041 0.0328 ms 65.6%
+  triton_mm_11042 0.0348 ms 61.8%
+  triton_mm_11040 0.0532 ms 40.4%
+SingleProcess AUTOTUNE takes 4.7757 seconds
+Shards completed:   2%|▏         | 1/50 [09:06<7:26:28, 546.71s/it]Shards completed:   4%|▍         | 2/50 [14:30<5:32:32, 415.67s/it]Shards completed:   6%|▌         | 3/50 [19:59<4:54:36, 376.10s/it]Shards completed:   8%|▊         | 4/50 [25:18<4:30:58, 353.44s/it]Shards completed:  10%|█         | 5/50 [30:39<4:16:16, 341.71s/it]Shards completed:  12%|█▏        | 6/50 [35:51<4:03:12, 331.64s/it]Shards completed:  14%|█▍        | 7/50 [41:06<3:53:44, 326.16s/it]Shards completed:  16%|█▌        | 8/50 [46:22<3:46:04, 322.95s/it]Shards completed:  18%|█▊        | 9/50 [51:45<3:40:50, 323.17s/it]Shards completed:  20%|██        | 10/50 [57:02<3:33:58, 320.97s/it]Shards completed:  22%|██▏       | 11/50 [1:02:26<3:29:15, 321.92s/it]Shards completed:  24%|██▍       | 12/50 [1:07:45<3:23:19, 321.03s/it]AUTOTUNE mm(4095x1280, 1280x1280)
+  mm 0.1249 ms 100.0%
+  triton_mm_11054 0.1403 ms 89.1%
+  triton_mm_11053 0.1413 ms 88.4%
+  triton_mm_11055 0.1526 ms 81.9%
+  triton_mm_11056 0.1526 ms 81.9%
+  triton_mm_11059 0.2007 ms 62.2%
+  triton_mm_11060 0.2017 ms 61.9%
+  triton_mm_11062 0.2109 ms 59.2%
+  triton_mm_11052 0.2120 ms 58.9%
+  triton_mm_11058 0.2734 ms 45.7%
+SingleProcess AUTOTUNE takes 1.5500 seconds
+AUTOTUNE addmm(4095x1280, 4095x1280, 1280x1280)
+  bias_addmm 0.1208 ms 100.0%
+  addmm 0.1413 ms 85.5%
+  triton_mm_11065 0.1413 ms 85.5%
+  triton_mm_11066 0.1413 ms 85.5%
+  triton_mm_11068 0.1536 ms 78.7%
+  triton_mm_11067 0.1546 ms 78.1%
+  triton_mm_11064 0.1925 ms 62.8%
+  triton_mm_11071 0.2028 ms 59.6%
+  triton_mm_11072 0.2038 ms 59.3%
+  triton_mm_11074 0.2120 ms 57.0%
+SingleProcess AUTOTUNE takes 1.6664 seconds
+AUTOTUNE bmm(1300x63x64, 1300x64x63)
+  triton_bmm_11082 0.0502 ms 100.0%
+  triton_bmm_11077 0.0522 ms 96.1%
+  triton_bmm_11076 0.0532 ms 94.2%
+  triton_bmm_11078 0.0532 ms 94.2%
+  triton_bmm_11084 0.0543 ms 92.5%
+  triton_bmm_11080 0.0553 ms 90.7%
+  triton_bmm_11081 0.0553 ms 90.7%
+  triton_bmm_11079 0.0563 ms 89.1%
+  triton_bmm_11083 0.0563 ms 89.1%
+  triton_bmm_11085 0.0584 ms 86.0%
+SingleProcess AUTOTUNE takes 1.9795 seconds
+AUTOTUNE bmm(1300x63x63, 1300x63x64)
+  triton_bmm_11098 0.0553 ms 100.0%
+  triton_bmm_11099 0.0553 ms 100.0%
+  triton_bmm_11103 0.0563 ms 98.2%
+  triton_bmm_11106 0.0563 ms 98.2%
+  triton_bmm_11100 0.0584 ms 94.7%
+  triton_bmm_11102 0.0594 ms 93.1%
+  triton_bmm_11104 0.0594 ms 93.1%
+  triton_bmm_11107 0.0604 ms 91.5%
+  triton_bmm_11105 0.0625 ms 88.5%
+  triton_bmm_11101 0.0717 ms 77.1%
+SingleProcess AUTOTUNE takes 1.7268 seconds
+AUTOTUNE addmm(4095x5120, 4095x1280, 1280x5120)
+  bias_addmm 0.4198 ms 100.0%
+  addmm 0.5120 ms 82.0%
+  triton_mm_11122 0.5171 ms 81.2%
+  triton_mm_11121 0.5212 ms 80.6%
+  triton_mm_11124 0.5734 ms 73.2%
+  triton_mm_11123 0.5775 ms 72.7%
+  triton_mm_11120 0.7250 ms 57.9%
+  triton_mm_11128 0.7711 ms 54.4%
+  triton_mm_11127 0.7731 ms 54.3%
+  triton_mm_11130 0.7864 ms 53.4%
+SingleProcess AUTOTUNE takes 1.7847 seconds
+AUTOTUNE mm(4095x5120, 5120x1280)
+  mm 0.4106 ms 100.0%
+  triton_mm_11134 0.5161 ms 79.6%
+  triton_mm_11133 0.5181 ms 79.2%
+  triton_mm_11136 0.5407 ms 75.9%
+  triton_mm_11135 0.5448 ms 75.4%
+  triton_mm_11132 0.7158 ms 57.4%
+  triton_mm_11140 0.7260 ms 56.6%
+  triton_mm_11139 0.7322 ms 56.1%
+  triton_mm_11142 0.8028 ms 51.1%
+  triton_mm_11138 1.0312 ms 39.8%
+SingleProcess AUTOTUNE takes 1.6612 seconds
+AUTOTUNE bmm(65x63x1280, 65x1280x1280)
+  triton_bmm_14089 0.1475 ms 100.0%
+  triton_bmm_14091 0.1679 ms 87.8%
+  bmm 0.1792 ms 82.3%
+  triton_bmm_14090 0.1802 ms 81.8%
+  triton_bmm_14092 0.2058 ms 71.6%
+  triton_bmm_14096 0.2120 ms 69.6%
+  triton_bmm_14095 0.2140 ms 68.9%
+  triton_bmm_14088 0.2273 ms 64.9%
+  triton_bmm_14094 0.2796 ms 52.7%
+  triton_bmm_14093 0.2847 ms 51.8%
+SingleProcess AUTOTUNE takes 2.3223 seconds
+AUTOTUNE mm(4095x1280, 1280x33)
+  triton_mm_14108 0.0297 ms 100.0%
+  triton_mm_14103 0.0317 ms 93.5%
+  triton_mm_14104 0.0328 ms 90.6%
+  triton_mm_14101 0.0348 ms 85.3%
+  triton_mm_14105 0.0358 ms 82.9%
+  triton_mm_14106 0.0369 ms 80.6%
+  triton_mm_14109 0.0369 ms 80.6%
+  mm 0.0379 ms 78.4%
+  triton_mm_14102 0.0379 ms 78.4%
+  triton_mm_14100 0.0532 ms 55.8%
+SingleProcess AUTOTUNE takes 1.4882 seconds
+Shards completed:  26%|██▌       | 13/50 [1:13:43<3:24:57, 332.37s/it]Shards completed:  28%|██▊       | 14/50 [1:18:36<3:12:20, 320.58s/it]Shards completed:  30%|███       | 15/50 [1:23:36<3:03:19, 314.28s/it]Shards completed:  32%|███▏      | 16/50 [1:28:32<2:55:00, 308.84s/it]AUTOTUNE mm(4082x1280, 1280x1280)
+  mm 0.1249 ms 100.0%
+  triton_mm_14114 0.1423 ms 87.8%
+  triton_mm_14113 0.1434 ms 87.1%
+  triton_mm_14115 0.1526 ms 81.9%
+  triton_mm_14116 0.1526 ms 81.9%
+  triton_mm_14119 0.2007 ms 62.2%
+  triton_mm_14120 0.2017 ms 61.9%
+  triton_mm_14122 0.2099 ms 59.5%
+  triton_mm_14112 0.2130 ms 58.7%
+  triton_mm_14118 0.2744 ms 45.5%
+SingleProcess AUTOTUNE takes 1.5499 seconds
+AUTOTUNE addmm(4082x1280, 4082x1280, 1280x1280)
+  bias_addmm 0.1208 ms 100.0%
+  addmm 0.1413 ms 85.5%
+  triton_mm_14126 0.1423 ms 84.9%
+  triton_mm_14125 0.1434 ms 84.3%
+  triton_mm_14127 0.1536 ms 78.7%
+  triton_mm_14128 0.1546 ms 78.1%
+  triton_mm_14124 0.1935 ms 62.4%
+  triton_mm_14131 0.2028 ms 59.6%
+  triton_mm_14132 0.2028 ms 59.6%
+  triton_mm_14134 0.2109 ms 57.3%
+SingleProcess AUTOTUNE takes 1.6643 seconds
+AUTOTUNE addmm(4082x5120, 4082x1280, 1280x5120)
+  bias_addmm 0.4209 ms 100.0%
+  addmm 0.5110 ms 82.4%
+  triton_mm_14162 0.5243 ms 80.3%
+  triton_mm_14161 0.5263 ms 80.0%
+  triton_mm_14164 0.5724 ms 73.5%
+  triton_mm_14163 0.5765 ms 73.0%
+  triton_mm_14160 0.7240 ms 58.1%
+  triton_mm_14168 0.7711 ms 54.6%
+  triton_mm_14167 0.7741 ms 54.4%
+  triton_mm_14170 0.7864 ms 53.5%
+SingleProcess AUTOTUNE takes 1.7847 seconds
+AUTOTUNE mm(4082x5120, 5120x1280)
+  mm 0.4106 ms 100.0%
+  triton_mm_14173 0.5151 ms 79.7%
+  triton_mm_14174 0.5181 ms 79.2%
+  triton_mm_14176 0.5427 ms 75.7%
+  triton_mm_14175 0.5448 ms 75.4%
+  triton_mm_14172 0.7178 ms 57.2%
+  triton_mm_14180 0.7260 ms 56.6%
+  triton_mm_14179 0.7322 ms 56.1%
+  triton_mm_14182 0.8049 ms 51.0%
+  triton_mm_14178 1.0281 ms 39.9%
+SingleProcess AUTOTUNE takes 1.6600 seconds
+AUTOTUNE bmm(26x157x1280, 26x1280x1280)
+  triton_bmm_16489 0.1751 ms 100.0%
+  bmm 0.1812 ms 96.6%
+  triton_bmm_16491 0.1925 ms 91.0%
+  triton_bmm_16490 0.2232 ms 78.4%
+  triton_bmm_16498 0.2406 ms 72.8%
+  triton_bmm_16492 0.2437 ms 71.8%
+  triton_bmm_16488 0.2519 ms 69.5%
+  triton_bmm_16496 0.2540 ms 69.0%
+  triton_bmm_16494 0.2785 ms 62.9%
+  triton_bmm_16495 0.3195 ms 54.8%
+SingleProcess AUTOTUNE takes 1.5658 seconds
+AUTOTUNE mm(4082x1280, 1280x33)
+  triton_mm_16508 0.0297 ms 100.0%
+  triton_mm_16503 0.0317 ms 93.5%
+  triton_mm_16504 0.0328 ms 90.6%
+  triton_mm_16501 0.0348 ms 85.3%
+  triton_mm_16505 0.0369 ms 80.6%
+  triton_mm_16502 0.0379 ms 78.4%
+  triton_mm_16506 0.0379 ms 78.4%
+  triton_mm_16509 0.0379 ms 78.4%
+  mm 0.0389 ms 76.3%
+  triton_mm_16500 0.0532 ms 55.8%
+SingleProcess AUTOTUNE takes 1.4910 seconds
+Shards completed:  34%|███▍      | 17/50 [1:34:24<2:56:57, 321.73s/it]Shards completed:  36%|███▌      | 18/50 [1:39:27<2:48:38, 316.20s/it]Shards completed:  38%|███▊      | 19/50 [1:44:33<2:41:40, 312.93s/it]Shards completed:  40%|████      | 20/50 [1:49:28<2:33:48, 307.63s/it]Shards completed:  42%|████▏     | 21/50 [1:54:36<2:28:45, 307.78s/it]Shards completed:  44%|████▍     | 22/50 [1:59:41<2:23:16, 307.00s/it]Shards completed:  46%|████▌     | 23/50 [2:04:35<2:16:25, 303.15s/it]Shards completed:  48%|████▊     | 24/50 [2:09:50<2:12:51, 306.58s/it]Shards completed:  50%|█████     | 25/50 [2:14:49<2:06:46, 304.26s/it]Shards completed:  52%|█████▏    | 26/50 [2:19:57<2:02:12, 305.52s/it]Shards completed:  54%|█████▍    | 27/50 [2:24:44<1:54:55, 299.82s/it]Shards completed:  56%|█████▌    | 28/50 [2:29:50<1:50:35, 301.60s/it]Shards completed:  58%|█████▊    | 29/50 [2:34:56<1:46:04, 303.05s/it]AUTOTUNE mm(2044x1280, 1280x1280)
+  triton_mm_16513 0.0758 ms 100.0%
+  triton_mm_16514 0.0758 ms 100.0%
+  triton_mm_16515 0.0799 ms 94.9%
+  triton_mm_16516 0.0809 ms 93.7%
+  mm 0.0829 ms 91.4%
+  triton_mm_16520 0.1044 ms 72.5%
+  triton_mm_16512 0.1167 ms 64.9%
+  triton_mm_16522 0.1270 ms 59.7%
+  triton_mm_16519 0.1321 ms 57.4%
+  triton_mm_16518 0.1444 ms 52.5%
+SingleProcess AUTOTUNE takes 1.5022 seconds
+AUTOTUNE addmm(2044x1280, 2044x1280, 1280x1280)
+  bias_addmm 0.0737 ms 100.0%
+  triton_mm_16525 0.0758 ms 97.3%
+  triton_mm_16526 0.0758 ms 97.3%
+  triton_mm_16527 0.0809 ms 91.1%
+  triton_mm_16528 0.0819 ms 90.0%
+  addmm 0.0901 ms 81.8%
+  triton_mm_16532 0.1055 ms 69.9%
+  triton_mm_16524 0.1178 ms 62.6%
+  triton_mm_16534 0.1280 ms 57.6%
+  triton_mm_16531 0.1331 ms 55.4%
+SingleProcess AUTOTUNE takes 1.6205 seconds
+AUTOTUNE mm(2044x1280, 1280x5120)
+  mm 0.2191 ms 100.0%
+  triton_mm_16562 0.2703 ms 81.1%
+  triton_mm_16561 0.2714 ms 80.8%
+  triton_mm_16563 0.2929 ms 74.8%
+  triton_mm_16564 0.2929 ms 74.8%
+  triton_mm_16560 0.3727 ms 58.8%
+  triton_mm_16567 0.3901 ms 56.2%
+  triton_mm_16568 0.3912 ms 56.0%
+  triton_mm_16570 0.4024 ms 54.5%
+  triton_mm_16565 0.5335 ms 41.1%
+SingleProcess AUTOTUNE takes 1.6024 seconds
+AUTOTUNE mm(2044x5120, 5120x1280)
+  mm 0.2540 ms 100.0%
+  triton_mm_16573 0.2642 ms 96.1%
+  triton_mm_16574 0.2662 ms 95.4%
+  triton_mm_16575 0.2724 ms 93.2%
+  triton_mm_16576 0.2765 ms 91.9%
+  triton_mm_16580 0.3697 ms 68.7%
+  triton_mm_16572 0.4188 ms 60.6%
+  triton_mm_16579 0.4905 ms 51.8%
+  triton_mm_16582 0.4936 ms 51.5%
+  triton_mm_16578 0.5212 ms 48.7%
+SingleProcess AUTOTUNE takes 1.6078 seconds
+AUTOTUNE mm(2044x1280, 1280x33)
+  triton_mm_18905 0.0215 ms 100.0%
+  triton_mm_18906 0.0215 ms 100.0%
+  triton_mm_18908 0.0256 ms 84.0%
+  triton_mm_18909 0.0256 ms 84.0%
+  triton_mm_18903 0.0266 ms 80.8%
+  mm 0.0276 ms 77.8%
+  triton_mm_18901 0.0297 ms 72.4%
+  triton_mm_18904 0.0317 ms 67.7%
+  triton_mm_18902 0.0338 ms 63.6%
+  triton_mm_18900 0.0522 ms 41.2%
+SingleProcess AUTOTUNE takes 1.4865 seconds
+Shards completed:  60%|██████    | 30/50 [2:40:50<1:46:09, 318.48s/it]Shards completed:  62%|██████▏   | 31/50 [2:45:42<1:38:19, 310.52s/it]Shards completed:  64%|██████▍   | 32/50 [2:50:39<1:31:54, 306.38s/it]Shards completed:  66%|██████▌   | 33/50 [2:55:37<1:26:04, 303.81s/it]Shards completed:  68%|██████▊   | 34/50 [3:00:30<1:20:09, 300.61s/it]Shards completed:  70%|███████   | 35/50 [3:05:24<1:14:38, 298.54s/it]Shards completed:  72%|███████▏  | 36/50 [3:10:32<1:10:22, 301.58s/it]Shards completed:  74%|███████▍  | 37/50 [3:15:35<1:05:24, 301.92s/it]Shards completed:  76%|███████▌  | 38/50 [3:20:41<1:00:37, 303.11s/it]Shards completed:  78%|███████▊  | 39/50 [3:25:47<55:43, 303.94s/it]  Shards completed:  80%|████████  | 40/50 [3:30:38<50:01, 300.16s/it]Shards completed:  82%|████████▏ | 41/50 [3:35:48<45:26, 302.98s/it]Shards completed:  84%|████████▍ | 42/50 [3:40:49<40:18, 302.31s/it]slurmstepd: error: *** JOB 36359019 ON holygpu7c0920 CANCELLED AT 2024-06-17T19:07:54 ***

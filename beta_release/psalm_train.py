@@ -24,12 +24,13 @@ Set device for execution
 """
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Device: {device}')
+torch.set_float32_matmul_precision('high')
 
 """
 For reproducible code
 """
 
-if args.seeded:
+if args.no_seed:
     seed = 42 # Because ...
     mu.set_torch_seeds(seed)
 
@@ -49,8 +50,9 @@ Not implemented as dictionary so that only one model is created
 """
 
 if args.model == 'clan': # Clan - lstM 3 Linear Norm head
-    classifier = cf.ClanLSTM(data_utils.embedding_dim,data_utils.clan_count).to(device)
-    train_fn = mu.train_step_clan
+    classifier = cf.ClanLSTMbatch(data_utils.embedding_dim,data_utils.clan_count).to(device)
+    classifier = torch.compile(classifier, mode='max-autotune')
+    train_fn = mu.train_step_clan_batch
 elif args.model == 'fam':
     classifier = cf.FamLSTM(data_utils.embedding_dim, data_utils.maps, device).to(device)
     train_fn = mu.train_step_fam
@@ -80,8 +82,8 @@ Initialize wandb
 """
 # For wandb logging - change project name and credentials
 
-if args.log:
-    run = wandb.init(project='esm2-linear3', 
+if args.no_log:
+    run = wandb.init(project=args.project, 
                     entity='eddy_lab',
                     config={"epochs": num_epochs,
                             "lr": lr,
@@ -92,9 +94,16 @@ if args.log:
 Training loop
 """
 
-if args.seeded:
+if args.no_seed:
     shard_seed = 42
     shard_gen = np.random.default_rng(shard_seed)
+
+if args.no_validation:
+    hmm_dict = data_utils.parse_shard('val') # Match this file name in the data
+    dataset = data_utils.get_dataset('val')
+    dataset = data_utils.filter_batches(dataset, hmm_dict.keys())
+
+    val_loader = data_utils.get_dataloader(dataset)
 
 for epoch in range(num_epochs):
 
@@ -104,7 +113,7 @@ for epoch in range(num_epochs):
     shard_gen.shuffle(shard_order) # Use this for reprodcibility of shard order
     np.random.shuffle(shard_order)
 
-    for shard in tqdm(shard_order ,total=data_utils.num_shards, desc='Shards completed'):
+    for shard in tqdm(shard_order, total=data_utils.num_shards, desc='Shards completed'):
 
         hmm_dict = data_utils.parse_shard(shard)
         dataset = data_utils.get_dataset(shard)
@@ -112,7 +121,7 @@ for epoch in range(num_epochs):
 
         data_loader = data_utils.get_dataloader(dataset)
 
-        shard_loss, n_batches = mu.train_fn(data_loader = data_loader,
+        shard_loss, n_batches = train_fn(data_loader = data_loader,
                                                   classifier = classifier,
                                                   loss_fn = loss_fn,
                                                   optimizer = optimizer,
@@ -124,14 +133,19 @@ for epoch in range(num_epochs):
         
         print(f'Epoch {epoch} Shard {shard} Loss {shard_loss / n_batches}')
         
-        if args.log:
+        if args.no_log:
             wandb.log({'Shard loss': shard_loss / n_batches})
-    
-    print(f'Epoch {epoch} Loss {epoch_loss / data_utils.num_shards}')
+
+    if args.no_validation:    
+        validation_loss = mu.validate_clan_batch(val_loader, classifier, loss_fn, device, data_utils, hmm_dict)
+    else:
+        validation_loss = 0.
+
+    print(f'Epoch {epoch} Loss {epoch_loss / data_utils.num_shards} Validation: {validation_loss}')
     print('------------------------------------------------')
     
-    if args.log:
-        wandb.log({'Epoch loss': epoch_loss / data_utils.num_shards, 'Learning rate': optimizer.param_groups[0]['lr']})
+    if args.no_log:
+        wandb.log({'Epoch loss': epoch_loss / data_utils.num_shards, 'Validation Loss': validation_loss, 'Learning rate': optimizer.param_groups[0]['lr']})
 
     torch.save(classifier.state_dict(), save_path / f'epoch_{epoch}.pth')
     scheduler.step(epoch_loss / data_utils.num_shards)

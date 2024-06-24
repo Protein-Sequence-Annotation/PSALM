@@ -253,9 +253,9 @@ class psalm:
             seq_name = seq_tup[0]
             seq_len = len(seq_tup[1])
             if len(seq_list) == 1:
-                seq_esm2_embed = esm2_embeds[:seq_len, :]
+                seq_esm2_embed = esm2_embeds[1:seq_len+1, :]
             else:
-                seq_esm2_embed = esm2_embeds[i, :seq_len, :]
+                seq_esm2_embed = esm2_embeds[i, 1:seq_len+1, :]
             clan_preds = self.clan_model(seq_esm2_embed)
             fam_preds = self.fam_model(seq_esm2_embed, clan_preds, self.clan_fam_matrix)
             # Visualize the predictions

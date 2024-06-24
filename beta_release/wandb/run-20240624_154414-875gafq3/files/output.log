@@ -1,0 +1,22 @@
+
+Shards completed:   0%|          | 0/4 [00:52<?, ?it/s]
+Traceback (most recent call last):
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train.py", line 116, in <module>
+    shard_loss, n_batches = train_fn(data_loader = data_loader,
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/ml_utils.py", line 350, in train_step_clan_batch
+    preds = classifier(embedding, mask)
+  File "/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+TypeError: ClanLSTM.forward() takes 2 positional arguments but 3 were given
+Traceback (most recent call last):
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train.py", line 116, in <module>
+    shard_loss, n_batches = train_fn(data_loader = data_loader,
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/ml_utils.py", line 350, in train_step_clan_batch
+    preds = classifier(embedding, mask)
+  File "/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+TypeError: ClanLSTM.forward() takes 2 positional arguments but 3 were given

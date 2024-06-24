@@ -34,6 +34,37 @@ class ClanLSTM(nn.Module):
         x, _ = self.lstm(x)
 
         return x
+    
+class ClanLSTMbatch(nn.Module):
+
+    def __init__(self, embed_dim, output_dim):
+        super().__init__()
+
+        self.lstm = nn.LSTM(embed_dim, embed_dim, bidirectional=True, batch_first=True)
+
+        self.linear_stack = nn.Sequential(
+            nn.Linear(2*embed_dim, 4*embed_dim), # Everything x2 because biLSTM
+            nn.ReLU(),
+            nn.LayerNorm(4*embed_dim),
+            nn.Linear(4*embed_dim, 4*embed_dim), # Everything x2 because biLSTM
+            nn.ReLU(),
+            nn.LayerNorm(4*embed_dim),
+            nn.Linear(4*embed_dim, output_dim)
+        )
+
+    def forward(self, x, mask):
+
+        x, _ = self.lstm(x)
+        x = x * mask.unsqueeze(2)
+        x = self.linear_stack(x)
+
+        return x
+
+    def embed(self, x):
+
+        x, _ = self.lstm(x)
+
+        return x
 
 class FamLSTM(nn.Module): 
     def __init__(self, embed_dim, maps, device):

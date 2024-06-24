@@ -1,0 +1,11 @@
+wandb: Currently logged in as: arpan_sarkar (eddy_lab). Use `wandb login --relogin` to force relogin
+wandb: wandb version 0.17.2 is available!  To upgrade, please run:
+wandb:  $ pip install wandb --upgrade
+wandb: Tracking run with wandb version 0.16.3
+wandb: Run data is saved locally in /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_171627-r12xkroa
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run cosmic-gorge-4
+wandb: ⭐️ View project at https://wandb.ai/eddy_lab/PSALM-1b
+wandb: 🚀 View run at https://wandb.ai/eddy_lab/PSALM-1b/runs/r12xkroa
+Shards completed:   0%|          | 0/4 [00:00<?, ?it/s]Shards completed:  25%|██▌       | 1/4 [07:59<23:58, 479.62s/it]Shards completed:  50%|█████     | 2/4 [13:53<13:31, 405.53s/it]Shards completed:  75%|███████▌  | 3/4 [18:58<05:59, 359.69s/it]Shards completed: 100%|██████████| 4/4 [24:07<00:00, 339.75s/it]Shards completed: 100%|██████████| 4/4 [24:07<00:00, 361.90s/it]
+Shards completed:   0%|          | 0/4 [00:00<?, ?it/s]slurmstepd: error: *** JOB 37395456 ON holygpu7c0920 CANCELLED AT 2024-06-24T17:42:45 ***

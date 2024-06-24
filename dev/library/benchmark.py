@@ -15,7 +15,7 @@ hmmsearch_command = "/n/eddy_lab/software/bin/hmmsearch"
 reformat_command = "/n/eddy_lab/software/bin/esl-reformat"
 align_command = "/n/eddy_lab/software/bin/hmmalign"
 alipid_command = "/n/eddy_lab/software/bin/esl-alipid"
-incE = str(0.001) #0.001 #0.00005
+incE = str(0.01) #0.001 #0.00005
 bitscore_threshold = 30
 
 hmm_db = "/n/eddy_lab/data/pfam-35.0/Pfam-A.hmm"
@@ -102,7 +102,7 @@ with open(f"{save_path}/log.csv", "w") as log_file:
         for query in SearchIO.parse(output_te_domtbl, 'hmmsearch3-domtab'):
             for hit in query.hits:
                 for hsp in hit.hsps:
-                    if hsp.evalue <= float(incE) and hsp.bitscore >= bitscore_threshold:
+                    if hsp.evalue <= float(incE): #and hsp.bitscore >= bitscore_threshold:
                         te_high_score_hits.append(f"{hit.id}/{hsp.hit_start+1}-{hsp.hit_end}")
                 # Find the hsp with the smallest evalue
                 # best_hsp = min(hit.hsps, key=lambda hsp: hsp.evalue)
@@ -113,7 +113,7 @@ with open(f"{save_path}/log.csv", "w") as log_file:
         for query in SearchIO.parse(output_tr_domtbl, 'hmmsearch3-domtab'):
             for hit in query.hits:
                 for hsp in hit.hsps:
-                    if hsp.evalue <= float(incE) and hsp.bitscore >= bitscore_threshold:
+                    if hsp.evalue <= float(incE): #and hsp.bitscore >= bitscore_threshold:
                         tr_high_score_hits.append(f"{hit.id}/{hsp.hit_start+1}-{hsp.hit_end}")
                 # Find the hsp with the smallest evalue
                 # best_hsp = min(hit.hsps, key=lambda hsp: hsp.evalue)

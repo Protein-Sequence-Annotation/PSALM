@@ -42,6 +42,8 @@ class DataUtils():
         self.fam_count = len(self.maps["fam_idx"])
         self.num_shards = num_shards
         self.esm_model, self.alphabet = pretrained.load_model_and_alphabet(esm_model_name)
+        self.esm_model.to(device)
+        self.esm_model = torch.compile(self.esm_model)
         self.last_layer = self.esm_model.num_layers
         self.embedding_dim = self.esm_model.embed_dim
         self.length_limit = limit
@@ -55,7 +57,6 @@ class DataUtils():
             param.requires_grad = False
         
         self.esm_model.eval()
-        self.esm_model.to(device)
 
     def __len__(self) -> int:
 
@@ -194,7 +195,8 @@ class DataUtils():
             embedding (torch.Tensor): tensor containing the embedding for the given sequence
         """
 
-        return self.esm_model(tokens, repr_layers=[self.last_layer], return_contacts=False)
+        # return self.esm_model(tokens, repr_layers=[self.last_layer], return_contacts=False)
+        return self.esm_model(tokens, repr_layers=[self.last_layer], return_contacts=False)["representations"][self.last_layer]
     
     def get_onehots(self, seq):
             
@@ -286,6 +288,87 @@ def train_step_clan(data_loader,
         optimizer.step()
 
         shard_loss += batch_loss.item()
+
+    return shard_loss, n_batches
+
+def train_step_clan_batch(data_loader,
+               classifier,
+               loss_fn,
+               optimizer,
+               device,
+               data_utils,
+               hmm_dict):
+
+    """
+    Runs a train step for one batch - trains clan prediction head
+
+    Args:
+        data_loader (DataLoader): A data loader object with the current dataset
+        classifier (nn.Module): The classifier head to decode esm embeddings
+        loss_fn (nn.Loss): Loss function for the model
+        optimizer (torch.optim.Optimizer): Optimizer for the classifier
+        device (str): GPU / CPU selection
+        data_utils (DataUtils): Member functions and helpers for processing HMM data
+        hmm_dict (Dict): dictionary with parsed results of hmmscan for current shard
+
+    Returns:
+        shard_loss (torch.Float32): loss over the entire shard
+        n_batches (torch.Int): number of batches
+    """
+
+    shard_loss = 0
+    n_batches = len(data_loader)
+
+    classifier.train()
+
+    for batch_id, (labels, seqs, tokens) in enumerate(data_loader):
+
+        tokens = tokens.to(device)
+        embedding = data_utils.get_embedding(tokens)
+
+        optimizer.zero_grad()
+        n_seqs = len(labels)
+
+        sequence_labels = [x.split()[0] for x in labels]
+        stop_indices = [min(len(seq), data_utils.length_limit) for seq in seqs]
+
+        target_vectors = np.zeros((len(sequence_labels), embedding.shape[1]))
+        mask = torch.zeros((embedding.shape[0], embedding.shape[1]))
+
+        for idx, label in enumerate(sequence_labels):
+
+            _, clan_vector = hu.generate_domain_position_list(hmm_dict, label, data_utils.maps)
+            clan_vector = np.argmax(clan_vector, axis=1)
+        
+            target_vectors[idx, 1:stop_indices[idx]+1] = clan_vector[:stop_indices[idx]]
+            mask[idx, 1:stop_indices[idx]+1] = 1
+        
+        target_vectors = torch.tensor(target_vectors, dtype=torch.long).to(device)
+        mask = mask.to(device)
+
+        # Logits are the raw output of the classifier!!! This should be used for CrossEntropyLoss()
+        preds = classifier(embedding, mask)
+
+        # loss is averaged over the whole sequence
+        loss = loss_fn(preds[mask.bool()], target_vectors[mask.bool()]) / 1.0 # Average loss over all sequences in the batch
+
+        # Full version - 12:05 min per shard
+        # No generate_position - 11:57 min per shard
+        # No masked loss - 12:09 min per shard
+        # No backward pass - 10:17 min per shard
+        # No prediction, just randn - 9:07 min per shard
+        # No prediction, just ones - 9:00 min per shard
+        # No mask/target creation - 11:12 min shard
+        # No embedding, just 4096 ones - way too long
+        # No embedding, no prediction - 3:07 mins
+        # Torch compile default - 11:45 min per shard
+        # mat mul change + erduce-overhead - 5:10 min per shard
+        # max-autotune + matmul - 
+
+        loss.backward()
+        optimizer.step()
+
+        shard_loss += loss.item()
 
     return shard_loss, n_batches
 
@@ -422,6 +505,76 @@ def test_step_clan(data_loader,
 
     return shard_preds, n_batches
 
+def test_step_clan_batch(data_loader,
+               classifier,
+               device,
+               data_utils,
+               hmm_dict):
+
+    """
+    Runs a test step for one batch - only clan prediction head
+
+    Args:
+        data_loader (DataLoader): A data loader object with the current dataset
+        classifier (nn.Module): The classifier head to decode esm embeddings
+        device (str): GPU / CPU selection
+        data_utils (DataUtils): Member functions and helpers for processing HMM data
+        hmm_dict (Dict): dictionary with parsed results of hmmscan for current shard
+
+    Returns:
+        all_preds (Dict): predictions for each sequence: top 2 values, indices, target
+        shard_length (torch.Int): length of all sequences in shard
+    """
+
+    shard_preds = {}
+
+    n_batches = len(data_loader)
+
+    classifier.eval()
+
+    with torch.inference_mode():
+
+        for batch_id, (labels, seqs, tokens) in enumerate(data_loader):
+
+            tokens = tokens.to(device)
+            embedding = data_utils.get_embedding(tokens)
+
+            sequence_labels = [x.split()[0] for x in labels]
+
+            stop_indices = [min(len(seq), data_utils.length_limit) for seq in seqs]
+
+            target_vectors = np.zeros((len(sequence_labels), embedding["representations"][data_utils.last_layer].shape[1]))
+            mask = torch.zeros((embedding["representations"][data_utils.last_layer].shape[0], embedding["representations"][data_utils.last_layer].shape[1]))
+
+            for idx, label in enumerate(sequence_labels):
+
+                _, clan_vector = hu.generate_domain_position_list(hmm_dict, label, data_utils.maps)
+                clan_vector = np.argmax(clan_vector, axis=1)
+            
+                target_vectors[idx, 1:stop_indices[idx]+1] = clan_vector[:stop_indices[idx]]
+                mask[idx, 1:stop_indices[idx]+1] = 1
+            
+            mask = mask.to(device)            
+
+            # Logits are the raw output of the classifier!!! This should be used for CrossEntropyLoss()
+            preds = classifier(embedding["representations"][data_utils.last_layer], mask)
+            
+            preds = F.softmax(preds, dim=1) # We don't care about this softmax dimension for mask
+
+            clan_preds, clan_idx = torch.topk(preds, k=1, dim=1) # This has same dimensions as mask
+
+            # Store predictions
+            
+
+            for idx in range(len(stop_indices)):
+                
+                shard_preds[sequence_labels[idx]] = {}
+                shard_preds[sequence_labels[idx]]['clan_preds'] = clan_preds[idx, 1:stop_indices[idx]+1].cpu().numpy()
+                shard_preds[sequence_labels[idx]]['clan_idx'] = clan_idx[idx, 1:stop_indices[idx]+1].cpu().numpy()
+                shard_preds[sequence_labels[idx]]['clan_true'] = target_vectors[idx, 1:stop_indices[idx]+1]
+
+    return shard_preds, n_batches
+
 def test_step_fam(data_loader,
                classifier_clan,
                classifier_fam,
@@ -504,3 +657,67 @@ def test_step_fam(data_loader,
                 shard_preds[label]['clan_true'] = clan_vector.numpy()
 
     return shard_preds, n_batches
+
+###########################################################
+# Validation step
+###########################################################
+
+def validate_clan_batch(data_loader,
+               classifier,
+               loss_fn,
+               device,
+               data_utils,
+               hmm_dict):
+
+    """
+    Runs a validation step for one batch - only clan prediction head
+
+    Args:
+        data_loader (DataLoader): A data loader object with the current dataset
+        classifier (nn.Module): The classifier head to decode esm embeddings
+        device (str): GPU / CPU selection
+        data_utils (DataUtils): Member functions and helpers for processing HMM data
+        hmm_dict (Dict): dictionary with parsed results of hmmscan for current shard
+
+    Returns:
+        all_preds (Dict): predictions for each sequence: top 2 values, indices, target
+        shard_length (torch.Int): length of all sequences in shard
+    """
+
+    classifier.eval()
+
+    with torch.inference_mode():
+
+        shard_loss = 0
+
+        for batch_id, (labels, seqs, tokens) in enumerate(data_loader):
+
+            tokens = tokens.to(device)
+            embedding = data_utils.get_embedding(tokens)
+
+            sequence_labels = [x.split()[0] for x in labels]
+            stop_indices = [min(len(seq), data_utils.length_limit) for seq in seqs]
+
+            target_vectors = np.zeros((len(sequence_labels), embedding.shape[1]))
+            mask = torch.zeros((embedding.shape[0], embedding.shape[1]))
+
+            for idx, label in enumerate(sequence_labels):
+
+                _, clan_vector = hu.generate_domain_position_list(hmm_dict, label, data_utils.maps)
+                clan_vector = np.argmax(clan_vector, axis=1)
+            
+                target_vectors[idx, 1:stop_indices[idx]+1] = clan_vector[:stop_indices[idx]]
+                mask[idx, 1:stop_indices[idx]+1] = 1
+            
+            target_vectors = torch.tensor(target_vectors, dtype=torch.long).to(device)
+            mask = mask.to(device)
+
+            # Logits are the raw output of the classifier!!! This should be used for CrossEntropyLoss()
+            preds = classifier(embedding, mask)
+
+            # loss is averaged over the whole sequence
+            loss = loss_fn(preds[mask.bool()], target_vectors[mask.bool()]) / 1.0 # Average loss over all sequences in the batch
+
+            shard_loss += loss.item()
+
+    return shard_loss

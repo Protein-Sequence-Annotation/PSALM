@@ -1,0 +1,10 @@
+
+Shards completed:   0%|          | 0/4 [00:08<?, ?it/s]
+Traceback (most recent call last):
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train.py", line 115, in <module>
+    shard_loss, n_batches = mu.train_fn(data_loader = data_loader,
+AttributeError: module 'ml_utils' has no attribute 'train_fn'
+Traceback (most recent call last):
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train.py", line 115, in <module>
+    shard_loss, n_batches = mu.train_fn(data_loader = data_loader,
+AttributeError: module 'ml_utils' has no attribute 'train_fn'

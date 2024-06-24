@@ -1,0 +1,361 @@
+
+
+Shards completed:   2%|▏         | 1/50 [11:29<9:22:43, 689.05s/it]
+Epoch 0 Shard 5 Loss 2.1426437005080694
+
+
+Shards completed:   6%|▌         | 3/50 [21:32<5:03:50, 387.89s/it]
+
+Shards completed:   8%|▊         | 4/50 [26:39<4:32:51, 355.90s/it]
+Epoch 0 Shard 41 Loss 0.9739100062419767
+
+Shards completed:  10%|█         | 5/50 [31:46<4:13:39, 338.22s/it]
+
+Shards completed:  12%|█▏        | 6/50 [36:42<3:57:39, 324.09s/it]
+
+Shards completed:  14%|█▍        | 7/50 [41:45<3:47:10, 316.99s/it]
+
+Shards completed:  16%|█▌        | 8/50 [46:48<3:38:52, 312.69s/it]
+
+Shards completed:  18%|█▊        | 9/50 [51:41<3:29:26, 306.50s/it]
+
+Shards completed:  20%|██        | 10/50 [56:34<3:21:27, 302.18s/it]
+
+Shards completed:  22%|██▏       | 11/50 [1:01:38<3:16:49, 302.80s/it]
+
+Shards completed:  24%|██▍       | 12/50 [1:07:27<3:20:37, 316.78s/it][2024-06-17 20:23:18,072] torch._dynamo.convert_frame: [WARNING] torch._dynamo hit config.cache_size_limit (8)
+[2024-06-17 20:23:18,072] torch._dynamo.convert_frame: [WARNING]    function: 'resume_in_forward' (/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/site-packages/esm/model/esm2.py:108)
+[2024-06-17 20:23:18,072] torch._dynamo.convert_frame: [WARNING]    last reason: tensor 'L['x']' size mismatch at index 0. expected 150, actual 2047
+[2024-06-17 20:23:18,072] torch._dynamo.convert_frame: [WARNING] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+[2024-06-17 20:23:18,072] torch._dynamo.convert_frame: [WARNING] To diagnose recompilation issues, see https://pytorch.org/docs/master/compile/troubleshooting.html.
+Epoch 0 Shard 19 Loss 0.48705530180943
+Shards completed:  26%|██▌       | 13/50 [1:14:14<3:32:15, 344.21s/it][2024-06-17 20:27:33,696] torch._dynamo.convert_frame: [WARNING] torch._dynamo hit config.cache_size_limit (8)
+[2024-06-17 20:27:33,696] torch._dynamo.convert_frame: [WARNING]    function: 'forward' (/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/site-packages/esm/modules.py:120)
+[2024-06-17 20:27:33,696] torch._dynamo.convert_frame: [WARNING]    last reason: ___check_obj_id(L['self'], 23388312255792)                    # x = self.self_attn_layer_norm(x)  # esm/modules.py:124 in forward
+[2024-06-17 20:27:33,696] torch._dynamo.convert_frame: [WARNING] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+[2024-06-17 20:27:33,696] torch._dynamo.convert_frame: [WARNING] To diagnose recompilation issues, see https://pytorch.org/docs/master/compile/troubleshooting.html.
+[2024-06-17 20:33:12,170] torch._dynamo.convert_frame: [WARNING] torch._dynamo hit config.cache_size_limit (8)
+[2024-06-17 20:33:12,170] torch._dynamo.convert_frame: [WARNING]    function: 'forward' (/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/site-packages/esm/multihead_attention.py:159)
+[2024-06-17 20:33:12,170] torch._dynamo.convert_frame: [WARNING]    last reason: ___check_obj_id(L['self'], 23388327335136)                    # assert embed_dim == self.embed_dim  # esm/multihead_attention.py:193 in forward
+[2024-06-17 20:33:12,170] torch._dynamo.convert_frame: [WARNING] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+[2024-06-17 20:33:12,170] torch._dynamo.convert_frame: [WARNING] To diagnose recompilation issues, see https://pytorch.org/docs/master/compile/troubleshooting.html.
+Epoch 0 Shard 25 Loss 0.4522014198349971
+Shards completed:  28%|██▊       | 14/50 [1:22:22<3:52:39, 387.77s/it]
+
+Shards completed:  30%|███       | 15/50 [1:27:52<3:36:03, 370.40s/it]
+
+Shards completed:  32%|███▏      | 16/50 [1:33:08<3:20:34, 353.96s/it]
+
+Shards completed:  34%|███▍      | 17/50 [1:39:10<3:16:03, 356.46s/it]
+
+Shards completed:  36%|███▌      | 18/50 [1:44:32<3:04:26, 345.82s/it]
+
+
+Shards completed:  40%|████      | 20/50 [1:54:41<2:42:31, 325.06s/it]
+Epoch 0 Shard 47 Loss 0.37972690070899884
+
+Shards completed:  42%|████▏     | 21/50 [2:00:00<2:36:14, 323.26s/it]
+
+Shards completed:  44%|████▍     | 22/50 [2:05:20<2:30:17, 322.07s/it]
+
+Shards completed:  46%|████▌     | 23/50 [2:10:38<2:24:27, 321.01s/it]
+
+
+Shards completed:  50%|█████     | 25/50 [2:20:50<2:10:40, 313.63s/it]
+Epoch 0 Shard 2 Loss 0.332930276711095
+
+
+Shards completed:  54%|█████▍    | 27/50 [2:31:03<1:58:41, 309.64s/it]
+Epoch 0 Shard 28 Loss 0.32230877062912217
+
+
+Shards completed:  58%|█████▊    | 29/50 [2:41:27<1:48:59, 311.43s/it]
+
+Shards completed:  60%|██████    | 30/50 [2:46:41<1:44:04, 312.25s/it]
+
+Shards completed:  62%|██████▏   | 31/50 [2:51:54<1:38:57, 312.49s/it]
+
+Shards completed:  64%|██████▍   | 32/50 [2:57:07<1:33:44, 312.48s/it]
+Epoch 0 Shard 49 Loss 0.2976221780588955
+
+
+Shards completed:  68%|██████▊   | 34/50 [3:07:36<1:23:46, 314.18s/it]
+Epoch 0 Shard 46 Loss 0.2992715926922252
+
+Shards completed:  70%|███████   | 35/50 [3:12:45<1:18:11, 312.77s/it]
+
+Shards completed:  72%|███████▏  | 36/50 [3:18:04<1:13:23, 314.56s/it]
+
+
+Shards completed:  76%|███████▌  | 38/50 [3:28:38<1:03:11, 315.99s/it]
+Epoch 0 Shard 27 Loss 0.27869591345178923
+
+Shards completed:  78%|███████▊  | 39/50 [3:33:55<57:58, 316.26s/it]
+
+Shards completed:  80%|████████  | 40/50 [3:39:16<52:56, 317.67s/it]
+
+Shards completed:  82%|████████▏ | 41/50 [3:44:28<47:23, 315.92s/it]
+
+Shards completed:  84%|████████▍ | 42/50 [3:49:51<42:25, 318.16s/it]
+
+
+Shards completed:  88%|████████▊ | 44/50 [4:00:34<31:58, 319.70s/it]
+
+Shards completed:  90%|█████████ | 45/50 [4:05:40<26:19, 315.83s/it]
+Epoch 0 Shard 13 Loss 0.24147582902464346
+
+
+Shards completed:  94%|█████████▍| 47/50 [4:16:30<16:00, 320.17s/it]
+Epoch 0 Shard 6 Loss 0.24175653808018358
+
+
+Shards completed:  98%|█████████▊| 49/50 [4:26:57<05:17, 317.42s/it]
+Epoch 0 Shard 31 Loss 0.232806441433479
+Epoch 0 Shard 7 Loss 0.2328744620595353
+Epoch 0 Loss 0.4581068585927669
+
+Shards completed: 100%|██████████| 50/50 [4:32:20<00:00, 326.81s/it]
+
+Shards completed:   2%|▏         | 1/50 [04:59<4:04:21, 299.22s/it]
+
+Shards completed:   4%|▍         | 2/50 [10:19<4:09:13, 311.52s/it]
+Epoch 1 Shard 20 Loss 0.17607528905485212
+
+
+Shards completed:   8%|▊         | 4/50 [20:38<3:57:31, 309.81s/it]
+Epoch 1 Shard 34 Loss 0.21589765904605876
+
+Shards completed:  10%|█         | 5/50 [25:42<3:50:41, 307.59s/it]
+
+
+Shards completed:  14%|█▍        | 7/50 [36:02<3:41:06, 308.52s/it]
+Epoch 1 Shard 22 Loss 0.18697022494300328
+
+Shards completed:  16%|█▌        | 8/50 [41:18<3:37:39, 310.95s/it]
+
+
+Shards completed:  20%|██        | 10/50 [52:04<3:31:17, 316.93s/it]
+Epoch 1 Shard 29 Loss 0.1850629931923103
+
+
+Shards completed:  24%|██▍       | 12/50 [1:02:17<3:17:12, 311.37s/it]
+Epoch 1 Shard 42 Loss 0.20646712027503475
+
+
+Shards completed:  28%|██▊       | 14/50 [1:12:53<3:08:51, 314.77s/it]
+Epoch 1 Shard 37 Loss 0.18045186592475898
+
+Shards completed:  30%|███       | 15/50 [1:18:12<3:04:30, 316.30s/it]
+
+Shards completed:  32%|███▏      | 16/50 [1:23:21<2:57:52, 313.91s/it]
+
+Shards completed:  34%|███▍      | 17/50 [1:28:27<2:51:22, 311.60s/it]
+
+Shards completed:  36%|███▌      | 18/50 [1:33:29<2:44:42, 308.83s/it]
+
+Shards completed:  38%|███▊      | 19/50 [1:38:44<2:40:28, 310.60s/it]
+
+Shards completed:  40%|████      | 20/50 [1:43:57<2:35:40, 311.35s/it]
+
+Shards completed:  42%|████▏     | 21/50 [1:49:12<2:31:01, 312.45s/it]
+
+Shards completed:  44%|████▍     | 22/50 [1:54:19<2:24:58, 310.66s/it]
+
+
+Shards completed:  48%|████▊     | 24/50 [2:04:37<2:14:08, 309.55s/it]
+Epoch 1 Shard 4 Loss 0.18135539591982788
+
+Shards completed:  50%|█████     | 25/50 [2:09:59<2:10:32, 313.29s/it]
+
+Shards completed:  52%|█████▏    | 26/50 [2:15:09<2:04:56, 312.36s/it]
+
+Shards completed:  54%|█████▍    | 27/50 [2:20:07<1:58:04, 308.03s/it]
+
+Shards completed:  56%|█████▌    | 28/50 [2:25:22<1:53:42, 310.10s/it]
+
+Shards completed:  58%|█████▊    | 29/50 [2:30:30<1:48:22, 309.66s/it]
+
+Shards completed:  60%|██████    | 30/50 [2:35:51<1:44:17, 312.88s/it]
+
+Shards completed:  62%|██████▏   | 31/50 [2:41:08<1:39:32, 314.33s/it]
+
+Shards completed:  64%|██████▍   | 32/50 [2:46:10<1:33:08, 310.50s/it]
+
+
+Shards completed:  68%|██████▊   | 34/50 [2:56:35<1:23:11, 311.94s/it]
+Epoch 1 Shard 31 Loss 0.16234879517978643
+
+
+Shards completed:  72%|███████▏  | 36/50 [3:06:43<1:11:58, 308.49s/it]
+Epoch 1 Shard 30 Loss 0.15411309435572174
+
+Shards completed:  74%|███████▍  | 37/50 [3:11:54<1:06:58, 309.11s/it]
+
+Shards completed:  76%|███████▌  | 38/50 [3:17:08<1:02:08, 310.68s/it]
+
+Shards completed:  78%|███████▊  | 39/50 [3:22:16<56:49, 309.91s/it]
+
+Shards completed:  80%|████████  | 40/50 [3:27:33<52:00, 312.03s/it]
+
+
+Shards completed:  84%|████████▍ | 42/50 [3:38:11<42:07, 315.89s/it]
+Epoch 1 Shard 7 Loss 0.1572369714734258
+
+Shards completed:  86%|████████▌ | 43/50 [3:43:30<36:57, 316.76s/it]
+
+Shards completed:  88%|████████▊ | 44/50 [3:48:44<31:35, 315.93s/it]
+
+
+Shards completed:  92%|█████████▏| 46/50 [3:59:15<21:02, 315.65s/it]
+Epoch 1 Shard 27 Loss 0.1534852591900024
+
+
+Shards completed:  96%|█████████▌| 48/50 [4:09:51<10:32, 316.45s/it]
+Epoch 1 Shard 44 Loss 0.14669778842595763
+
+Shards completed:  98%|█████████▊| 49/50 [4:14:59<05:13, 313.88s/it]
+Epoch 1 Shard 13 Loss 0.14523757211144203
+Epoch 1 Loss 0.17669492149975746
+
+Shards completed: 100%|██████████| 50/50 [4:19:56<00:00, 311.93s/it]
+Shards completed:   0%|          | 0/50 [00:00<?, ?it/s]
+
+Shards completed:   2%|▏         | 1/50 [05:09<4:12:25, 309.09s/it]
+
+Shards completed:   4%|▍         | 2/50 [10:28<4:12:03, 315.07s/it]
+
+Shards completed:   6%|▌         | 3/50 [15:43<4:06:59, 315.31s/it]
+
+
+Shards completed:  10%|█         | 5/50 [25:48<3:50:33, 307.41s/it]
+Epoch 2 Shard 42 Loss 0.14013557869488852
+
+Shards completed:  12%|█▏        | 6/50 [31:08<3:48:28, 311.55s/it]
+
+
+Shards completed:  16%|█▌        | 8/50 [41:30<3:38:12, 311.73s/it]
+
+Shards completed:  18%|█▊        | 9/50 [46:28<3:30:08, 307.53s/it]
+
+Shards completed:  20%|██        | 10/50 [51:37<3:25:20, 308.00s/it]
+Epoch 2 Shard 23 Loss 0.13505064142426207
+
+Shards completed:  22%|██▏       | 11/50 [56:37<3:18:35, 305.53s/it]
+
+
+Shards completed:  26%|██▌       | 13/50 [1:07:08<3:11:22, 310.33s/it]
+
+Shards completed:  28%|██▊       | 14/50 [1:12:17<3:05:52, 309.80s/it]
+Epoch 2 Shard 15 Loss 0.12971580722131745
+
+
+Shards completed:  32%|███▏      | 16/50 [1:22:37<2:55:47, 310.23s/it]
+Epoch 2 Shard 27 Loss 0.11690301153347599
+
+
+Shards completed:  36%|███▌      | 18/50 [1:32:52<2:45:05, 309.56s/it]
+Epoch 2 Shard 44 Loss 0.12323332280390512
+
+
+Shards completed:  40%|████      | 20/50 [1:43:27<2:36:41, 313.39s/it]
+Epoch 2 Shard 41 Loss 0.1292664238939404
+
+
+Shards completed:  44%|████▍     | 22/50 [1:53:46<2:25:28, 311.74s/it]
+
+Shards completed:  46%|████▌     | 23/50 [1:59:01<2:20:46, 312.85s/it]
+Epoch 2 Shard 5 Loss 0.13301638709674046
+
+
+Shards completed:  50%|█████     | 25/50 [2:09:24<2:10:22, 312.89s/it]
+Epoch 2 Shard 29 Loss 0.1238562307995183
+
+
+Shards completed:  54%|█████▍    | 27/50 [2:19:55<2:00:23, 314.06s/it]
+Epoch 2 Shard 40 Loss 0.11790416232089847
+
+
+Shards completed:  58%|█████▊    | 29/50 [2:30:38<1:51:09, 317.59s/it]
+Epoch 2 Shard 17 Loss 0.11776985622803486
+
+Shards completed:  60%|██████    | 30/50 [2:35:56<1:45:54, 317.74s/it]
+
+
+Shards completed:  64%|██████▍   | 32/50 [2:46:13<1:33:46, 312.59s/it]
+
+Shards completed:  66%|██████▌   | 33/50 [2:51:35<1:29:21, 315.39s/it]
+Epoch 2 Shard 46 Loss 0.12665938182365072
+
+
+Shards completed:  70%|███████   | 35/50 [3:01:54<1:17:55, 311.70s/it]
+
+Shards completed:  72%|███████▏  | 36/50 [3:07:02<1:12:29, 310.69s/it]
+
+Shards completed:  74%|███████▍  | 37/50 [3:12:11<1:07:12, 310.18s/it]
+
+Shards completed:  76%|███████▌  | 38/50 [3:17:10<1:01:22, 306.84s/it]
+
+Shards completed:  78%|███████▊  | 39/50 [3:22:26<56:45, 309.60s/it]
+
+Shards completed:  80%|████████  | 40/50 [3:27:48<52:14, 313.41s/it]
+
+Shards completed:  82%|████████▏ | 41/50 [3:32:57<46:47, 311.91s/it]
+
+Shards completed:  84%|████████▍ | 42/50 [3:38:12<41:42, 312.77s/it]
+Epoch 2 Shard 21 Loss 0.12485293203931518
+
+
+Shards completed:  88%|████████▊ | 44/50 [3:48:27<30:59, 309.99s/it]
+
+Shards completed:  90%|█████████ | 45/50 [3:53:43<25:58, 311.64s/it]
+
+Shards completed:  92%|█████████▏| 46/50 [3:59:01<20:54, 313.58s/it]
+Epoch 2 Shard 32 Loss 0.11077386057451538
+
+Shards completed:  94%|█████████▍| 47/50 [4:04:08<15:35, 311.72s/it]
+
+
+Shards completed:  98%|█████████▊| 49/50 [4:14:40<05:14, 314.31s/it]
+
+Shards completed: 100%|██████████| 50/50 [4:19:50<00:00, 311.81s/it]
+Epoch 2 Shard 3 Loss 0.12314516178755205
+Epoch 2 Loss 0.12362238097752998
+------------------------------------------------
+
+Shards completed:   2%|▏         | 1/50 [05:10<4:13:35, 310.53s/it]
+Epoch 3 Shard 45 Loss 0.08317987997768829
+
+
+Shards completed:   6%|▌         | 3/50 [15:35<4:04:00, 311.50s/it]
+
+Shards completed:   8%|▊         | 4/50 [20:58<4:02:13, 315.95s/it]
+
+Shards completed:  10%|█         | 5/50 [26:10<3:55:59, 314.66s/it]
+Epoch 3 Shard 2 Loss 0.08379186372606352
+
+Shards completed:  12%|█▏        | 6/50 [31:30<3:52:05, 316.50s/it]
+
+
+Shards completed:  16%|█▌        | 8/50 [41:44<3:37:51, 311.22s/it]
+
+Shards completed:  18%|█▊        | 9/50 [46:57<3:32:59, 311.70s/it]
+
+Shards completed:  20%|██        | 10/50 [52:05<3:27:05, 310.64s/it]
+
+Shards completed:  22%|██▏       | 11/50 [57:24<3:23:37, 313.27s/it]
+
+Shards completed:  24%|██▍       | 12/50 [1:02:42<3:19:21, 314.77s/it]
+
+Shards completed:  26%|██▌       | 13/50 [1:07:51<3:12:55, 312.86s/it]
+
+Shards completed:  28%|██▊       | 14/50 [1:13:02<3:07:23, 312.32s/it]
+
+Shards completed:  30%|███       | 15/50 [1:18:14<3:02:09, 312.28s/it]
+Epoch 3 Shard 23 Loss 0.10128219066586572
+
+
+Shards completed:  34%|███▍      | 17/50 [1:28:46<2:52:58, 314.50s/it]
+
+Shards completed:  36%|███▌      | 18/50 [1:34:03<2:48:05, 315.17s/it]
+
+Shards completed:  38%|███▊      | 19/50 [1:39:27<2:44:17, 317.99s/it]
