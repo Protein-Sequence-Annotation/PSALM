@@ -1,0 +1,110 @@
+
+
+Shards completed:  50%|█████     | 1/2 [08:34<08:34, 514.68s/it]
+Epoch 0 Shard 2 Loss 2.617063512412349
+
+Shards completed: 100%|██████████| 2/2 [13:41<00:00, 410.78s/it]
+[2024-06-25 07:59:17,281] torch._dynamo.convert_frame: [WARNING] torch._dynamo hit config.cache_size_limit (8)
+[2024-06-25 07:59:17,281] torch._dynamo.convert_frame: [WARNING]    function: 'resume_in_forward' (/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/site-packages/esm/model/esm2.py:108)
+[2024-06-25 07:59:17,281] torch._dynamo.convert_frame: [WARNING]    last reason: ___check_global_state()
+[2024-06-25 07:59:17,281] torch._dynamo.convert_frame: [WARNING] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+[2024-06-25 07:59:17,281] torch._dynamo.convert_frame: [WARNING] To diagnose recompilation issues, see https://pytorch.org/docs/master/compile/troubleshooting.html.
+Epoch 0 Loss 2.4090834953251106 Validation: 3276.1246204078197
+------------------------------------------------
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s][2024-06-25 08:02:42,543] torch._dynamo.convert_frame: [WARNING] torch._dynamo hit config.cache_size_limit (8)
+[2024-06-25 08:02:42,543] torch._dynamo.convert_frame: [WARNING]    function: 'forward' (/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/site-packages/esm/modules.py:120)
+[2024-06-25 08:02:42,543] torch._dynamo.convert_frame: [WARNING]    last reason: ___check_global_state()
+[2024-06-25 08:02:42,543] torch._dynamo.convert_frame: [WARNING] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+[2024-06-25 08:02:42,543] torch._dynamo.convert_frame: [WARNING] To diagnose recompilation issues, see https://pytorch.org/docs/master/compile/troubleshooting.html.
+[2024-06-25 08:04:25,795] torch._dynamo.convert_frame: [WARNING] torch._dynamo hit config.cache_size_limit (8)
+[2024-06-25 08:04:25,795] torch._dynamo.convert_frame: [WARNING]    function: 'forward' (/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/site-packages/esm/multihead_attention.py:159)
+[2024-06-25 08:04:25,795] torch._dynamo.convert_frame: [WARNING]    last reason: ___check_obj_id(L['self'], 23108612985888)                    # assert embed_dim == self.embed_dim  # esm/multihead_attention.py:193 in forward
+[2024-06-25 08:04:25,795] torch._dynamo.convert_frame: [WARNING] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+[2024-06-25 08:04:25,795] torch._dynamo.convert_frame: [WARNING] To diagnose recompilation issues, see https://pytorch.org/docs/master/compile/troubleshooting.html.
+Epoch 1 Shard 2 Loss 1.7894761513284
+Shards completed:  50%|█████     | 1/2 [08:43<08:43, 523.79s/it]
+
+Shards completed: 100%|██████████| 2/2 [14:11<00:00, 425.54s/it]
+Epoch 1 Loss 1.6550263532738576 Validation: 2635.9679130762815
+------------------------------------------------
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]
+
+
+Shards completed: 100%|██████████| 2/2 [10:34<00:00, 317.38s/it]
+Epoch 2 Shard 1 Loss 1.0924686978905256
+Epoch 2 Loss 1.1781962185547643 Validation: 2041.5487851575017
+------------------------------------------------
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]
+
+Shards completed:  50%|█████     | 1/2 [05:16<05:16, 316.38s/it]
+
+Shards completed: 100%|██████████| 2/2 [10:35<00:00, 317.61s/it]
+Epoch 3 Loss 0.8618292899548651 Validation: 1556.1410127654672
+------------------------------------------------
+
+Shards completed:  50%|█████     | 1/2 [05:15<05:15, 315.34s/it]
+Epoch 4 Shard 2 Loss 0.6610480623705365
+
+Shards completed: 100%|██████████| 2/2 [10:32<00:00, 316.48s/it]
+Epoch 4 Loss 0.6363599078090767 Validation: 1394.0288592651486
+------------------------------------------------
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]
+
+
+Shards completed: 100%|██████████| 2/2 [10:33<00:00, 316.79s/it]
+Epoch 5 Shard 1 Loss 0.4662988395181321
+Epoch 5 Loss 0.4840671215055291 Validation: 905.2185900788754
+------------------------------------------------
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]
+
+
+Shards completed: 100%|██████████| 2/2 [10:32<00:00, 316.31s/it]
+Epoch 6 Shard 1 Loss 0.37270584449968264
+Epoch 6 Loss 0.3819748452533436 Validation: 828.2490623481572
+------------------------------------------------
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]
+
+Shards completed:  50%|█████     | 1/2 [05:15<05:15, 315.44s/it]
+
+Shards completed: 100%|██████████| 2/2 [10:33<00:00, 316.99s/it]
+Epoch 7 Loss 0.31668912949999145 Validation: 777.1656794352457
+------------------------------------------------
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]
+
+Shards completed:  50%|█████     | 1/2 [05:15<05:15, 315.35s/it]
+
+Shards completed: 100%|██████████| 2/2 [10:33<00:00, 316.53s/it]
+Epoch 8 Loss 0.2549487571670541 Validation: 583.5053792484105
+------------------------------------------------
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]
+
+
+Shards completed: 100%|██████████| 2/2 [10:37<00:00, 318.62s/it]
+Epoch 9 Shard 1 Loss 0.20900474449776058
+Epoch 9 Loss 0.2137856125054737 Validation: 530.5323848258704
+------------------------------------------------
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]
+
+Shards completed:  50%|█████     | 1/2 [05:17<05:17, 317.90s/it]
+
+Shards completed: 100%|██████████| 2/2 [10:35<00:00, 317.74s/it]
+Epoch 10 Loss 0.187793222970225 Validation: 411.16937474068254
+------------------------------------------------
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]
+
+Shards completed:  50%|█████     | 1/2 [05:16<05:16, 316.59s/it]
+Shards completed: 100%|██████████| 2/2 [10:32<00:00, 316.42s/it]
+Traceback (most recent call last):
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train.py", line 140, in <module>
+    validation_loss = mu.validate_clan_batch(val_loader, classifier, loss_fn, device, data_utils, hmm_dict)
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/ml_utils.py", line 706, in validate_clan_batch
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/hmmscan_utils.py", line 145, in generate_domain_position_list
+    domain_vector = np.zeros(shape=(len(family_mapping),hmmscan_dict[query_sequence]["length"]),dtype=np.float32)
+KeyError: 'G4T007.1'
+Traceback (most recent call last):
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train.py", line 140, in <module>
+    validation_loss = mu.validate_clan_batch(val_loader, classifier, loss_fn, device, data_utils, hmm_dict)
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/ml_utils.py", line 706, in validate_clan_batch
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/hmmscan_utils.py", line 145, in generate_domain_position_list
+    domain_vector = np.zeros(shape=(len(family_mapping),hmmscan_dict[query_sequence]["length"]),dtype=np.float32)
+KeyError: 'G4T007.1'

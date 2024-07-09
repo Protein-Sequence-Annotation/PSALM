@@ -1,11 +1,67 @@
 wandb: Currently logged in as: arpan_sarkar (eddy_lab). Use `wandb login --relogin` to force relogin
-wandb: wandb version 0.17.2 is available!  To upgrade, please run:
+wandb: wandb version 0.17.3 is available!  To upgrade, please run:
 wandb:  $ pip install wandb --upgrade
 wandb: Tracking run with wandb version 0.16.3
-wandb: Run data is saved locally in /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240624_171627-r12xkroa
+wandb: Run data is saved locally in /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240625_073656-c28fid7t
 wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run cosmic-gorge-4
+wandb: Syncing run fallen-breeze-5
 wandb: ⭐️ View project at https://wandb.ai/eddy_lab/PSALM-1b
-wandb: 🚀 View run at https://wandb.ai/eddy_lab/PSALM-1b/runs/r12xkroa
-Shards completed:   0%|          | 0/4 [00:00<?, ?it/s]Shards completed:  25%|██▌       | 1/4 [07:59<23:58, 479.62s/it]Shards completed:  50%|█████     | 2/4 [13:53<13:31, 405.53s/it]Shards completed:  75%|███████▌  | 3/4 [18:58<05:59, 359.69s/it]Shards completed: 100%|██████████| 4/4 [24:07<00:00, 339.75s/it]Shards completed: 100%|██████████| 4/4 [24:07<00:00, 361.90s/it]
-Shards completed:   0%|          | 0/4 [00:00<?, ?it/s]slurmstepd: error: *** JOB 37395456 ON holygpu7c0920 CANCELLED AT 2024-06-24T17:42:45 ***
+wandb: 🚀 View run at https://wandb.ai/eddy_lab/PSALM-1b/runs/c28fid7t
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]Shards completed:  50%|█████     | 1/2 [08:34<08:34, 514.68s/it]Shards completed: 100%|██████████| 2/2 [13:41<00:00, 392.44s/it]Shards completed: 100%|██████████| 2/2 [13:41<00:00, 410.78s/it]
+[2024-06-25 07:59:17,281] torch._dynamo.convert_frame: [WARNING] torch._dynamo hit config.cache_size_limit (8)
+[2024-06-25 07:59:17,281] torch._dynamo.convert_frame: [WARNING]    function: 'resume_in_forward' (/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/site-packages/esm/model/esm2.py:108)
+[2024-06-25 07:59:17,281] torch._dynamo.convert_frame: [WARNING]    last reason: ___check_global_state()
+[2024-06-25 07:59:17,281] torch._dynamo.convert_frame: [WARNING] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+[2024-06-25 07:59:17,281] torch._dynamo.convert_frame: [WARNING] To diagnose recompilation issues, see https://pytorch.org/docs/master/compile/troubleshooting.html.
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s][2024-06-25 08:02:42,543] torch._dynamo.convert_frame: [WARNING] torch._dynamo hit config.cache_size_limit (8)
+[2024-06-25 08:02:42,543] torch._dynamo.convert_frame: [WARNING]    function: 'forward' (/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/site-packages/esm/modules.py:120)
+[2024-06-25 08:02:42,543] torch._dynamo.convert_frame: [WARNING]    last reason: ___check_global_state()
+[2024-06-25 08:02:42,543] torch._dynamo.convert_frame: [WARNING] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+[2024-06-25 08:02:42,543] torch._dynamo.convert_frame: [WARNING] To diagnose recompilation issues, see https://pytorch.org/docs/master/compile/troubleshooting.html.
+[2024-06-25 08:04:25,795] torch._dynamo.convert_frame: [WARNING] torch._dynamo hit config.cache_size_limit (8)
+[2024-06-25 08:04:25,795] torch._dynamo.convert_frame: [WARNING]    function: 'forward' (/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/lib/python3.10/site-packages/esm/multihead_attention.py:159)
+[2024-06-25 08:04:25,795] torch._dynamo.convert_frame: [WARNING]    last reason: ___check_obj_id(L['self'], 23108612985888)                    # assert embed_dim == self.embed_dim  # esm/multihead_attention.py:193 in forward
+[2024-06-25 08:04:25,795] torch._dynamo.convert_frame: [WARNING] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+[2024-06-25 08:04:25,795] torch._dynamo.convert_frame: [WARNING] To diagnose recompilation issues, see https://pytorch.org/docs/master/compile/troubleshooting.html.
+Shards completed:  50%|█████     | 1/2 [08:43<08:43, 523.79s/it]Shards completed: 100%|██████████| 2/2 [14:11<00:00, 408.20s/it]Shards completed: 100%|██████████| 2/2 [14:11<00:00, 425.54s/it]
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]Shards completed:  50%|█████     | 1/2 [05:17<05:17, 317.27s/it]Shards completed: 100%|██████████| 2/2 [10:34<00:00, 317.40s/it]Shards completed: 100%|██████████| 2/2 [10:34<00:00, 317.38s/it]
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]Shards completed:  50%|█████     | 1/2 [05:16<05:16, 316.38s/it]Shards completed: 100%|██████████| 2/2 [10:35<00:00, 317.82s/it]Shards completed: 100%|██████████| 2/2 [10:35<00:00, 317.61s/it]
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]Shards completed:  50%|█████     | 1/2 [05:15<05:15, 315.34s/it]Shards completed: 100%|██████████| 2/2 [10:32<00:00, 316.68s/it]Shards completed: 100%|██████████| 2/2 [10:32<00:00, 316.48s/it]
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]Shards completed:  50%|█████     | 1/2 [05:15<05:15, 315.65s/it]Shards completed: 100%|██████████| 2/2 [10:33<00:00, 316.99s/it]Shards completed: 100%|██████████| 2/2 [10:33<00:00, 316.79s/it]
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]Shards completed:  50%|█████     | 1/2 [05:14<05:14, 314.82s/it]Shards completed: 100%|██████████| 2/2 [10:32<00:00, 316.57s/it]Shards completed: 100%|██████████| 2/2 [10:32<00:00, 316.31s/it]
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]Shards completed:  50%|█████     | 1/2 [05:15<05:15, 315.44s/it]Shards completed: 100%|██████████| 2/2 [10:33<00:00, 317.27s/it]Shards completed: 100%|██████████| 2/2 [10:33<00:00, 316.99s/it]
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]Shards completed:  50%|█████     | 1/2 [05:15<05:15, 315.35s/it]Shards completed: 100%|██████████| 2/2 [10:33<00:00, 316.74s/it]Shards completed: 100%|██████████| 2/2 [10:33<00:00, 316.53s/it]
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]Shards completed:  50%|█████     | 1/2 [05:15<05:15, 315.98s/it]Shards completed: 100%|██████████| 2/2 [10:37<00:00, 319.09s/it]Shards completed: 100%|██████████| 2/2 [10:37<00:00, 318.62s/it]
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]Shards completed:  50%|█████     | 1/2 [05:17<05:17, 317.90s/it]Shards completed: 100%|██████████| 2/2 [10:35<00:00, 317.71s/it]Shards completed: 100%|██████████| 2/2 [10:35<00:00, 317.74s/it]
+Shards completed:   0%|          | 0/2 [00:00<?, ?it/s]Shards completed:  50%|█████     | 1/2 [05:16<05:16, 316.59s/it]Shards completed: 100%|██████████| 2/2 [10:32<00:00, 316.39s/it]Shards completed: 100%|██████████| 2/2 [10:32<00:00, 316.42s/it]
+Traceback (most recent call last):
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train.py", line 140, in <module>
+    validation_loss = mu.validate_clan_batch(val_loader, classifier, loss_fn, device, data_utils, hmm_dict)
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/ml_utils.py", line 706, in validate_clan_batch
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/hmmscan_utils.py", line 145, in generate_domain_position_list
+    domain_vector = np.zeros(shape=(len(family_mapping),hmmscan_dict[query_sequence]["length"]),dtype=np.float32)
+KeyError: 'G4T007.1'
+Traceback (most recent call last):
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train.py", line 140, in <module>
+    validation_loss = mu.validate_clan_batch(val_loader, classifier, loss_fn, device, data_utils, hmm_dict)
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/ml_utils.py", line 706, in validate_clan_batch
+  File "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/hmmscan_utils.py", line 145, in generate_domain_position_list
+    domain_vector = np.zeros(shape=(len(family_mapping),hmmscan_dict[query_sequence]["length"]),dtype=np.float32)
+KeyError: 'G4T007.1'
+wandb: - 0.006 MB of 0.006 MB uploadedwandb: \ 0.006 MB of 0.006 MB uploadedwandb: | 0.011 MB of 0.011 MB uploaded (0.003 MB deduped)wandb: / 0.022 MB of 0.033 MB uploaded (0.003 MB deduped)wandb: 
+wandb: Run history:
+wandb:      Epoch loss █▆▄▃▂▂▂▁▁▁▁
+wandb:   Learning rate ▁▁▁▁▁▁▁▁▁▁▁
+wandb:      Shard loss █▇▆▅▄▄▃▃▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁
+wandb: Validation Loss █▆▅▄▃▂▂▂▁▁▁
+wandb: 
+wandb: Run summary:
+wandb:      Epoch loss 0.18779
+wandb:   Learning rate 0.001
+wandb:      Shard loss 0.17119
+wandb: Validation Loss 411.16937
+wandb: 
+wandb: 🚀 View run fallen-breeze-5 at: https://wandb.ai/eddy_lab/PSALM-1b/runs/c28fid7t
+wandb: ️⚡ View job at https://wandb.ai/eddy_lab/PSALM-1b/jobs/QXJ0aWZhY3RDb2xsZWN0aW9uOjIyOTIxNTcyNA==/version_details/v1
+wandb: Synced 6 W&B file(s), 0 media file(s), 2 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20240625_073656-c28fid7t/logs

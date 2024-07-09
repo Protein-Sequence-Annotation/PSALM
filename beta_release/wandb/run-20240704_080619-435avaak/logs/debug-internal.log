@@ -1,0 +1,59 @@
+2024-07-04 08:06:19,331 INFO    StreamThr :208093 [internal.py:wandb_internal():86] W&B internal server running at pid: 208093, started at: 2024-07-04 08:06:19.329880
+2024-07-04 08:06:19,332 DEBUG   HandlerThread:208093 [handler.py:handle_request():146] handle_request: status
+2024-07-04 08:06:19,367 INFO    WriterThread:208093 [datastore.py:open_for_write():87] open: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240704_080619-435avaak/run-435avaak.wandb
+2024-07-04 08:06:19,369 DEBUG   SenderThread:208093 [sender.py:send():382] send: header
+2024-07-04 08:06:19,403 DEBUG   SenderThread:208093 [sender.py:send():382] send: run
+2024-07-04 08:06:19,670 INFO    SenderThread:208093 [dir_watcher.py:__init__():211] watching files in: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240704_080619-435avaak/files
+2024-07-04 08:06:19,670 INFO    SenderThread:208093 [sender.py:_start_run_threads():1136] run started: 435avaak with start time 1720094779.333702
+2024-07-04 08:06:19,701 DEBUG   HandlerThread:208093 [handler.py:handle_request():146] handle_request: check_version
+2024-07-04 08:06:19,701 DEBUG   SenderThread:208093 [sender.py:send_request():409] send_request: check_version
+2024-07-04 08:06:19,817 DEBUG   HandlerThread:208093 [handler.py:handle_request():146] handle_request: run_start
+2024-07-04 08:06:19,850 DEBUG   HandlerThread:208093 [system_info.py:__init__():27] System info init
+2024-07-04 08:06:19,850 DEBUG   HandlerThread:208093 [system_info.py:__init__():42] System info init done
+2024-07-04 08:06:19,850 INFO    HandlerThread:208093 [system_monitor.py:start():194] Starting system monitor
+2024-07-04 08:06:19,851 INFO    SystemMonitor:208093 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2024-07-04 08:06:19,851 INFO    HandlerThread:208093 [system_monitor.py:probe():214] Collecting system info
+2024-07-04 08:06:19,852 INFO    SystemMonitor:208093 [interfaces.py:start():190] Started cpu monitoring
+2024-07-04 08:06:19,853 INFO    SystemMonitor:208093 [interfaces.py:start():190] Started disk monitoring
+2024-07-04 08:06:19,853 INFO    SystemMonitor:208093 [interfaces.py:start():190] Started gpu monitoring
+2024-07-04 08:06:19,857 INFO    SystemMonitor:208093 [interfaces.py:start():190] Started memory monitoring
+2024-07-04 08:06:19,858 INFO    SystemMonitor:208093 [interfaces.py:start():190] Started network monitoring
+2024-07-04 08:06:19,886 DEBUG   HandlerThread:208093 [system_info.py:probe():151] Probing system
+2024-07-04 08:06:19,891 DEBUG   HandlerThread:208093 [system_info.py:_probe_git():136] Probing git
+2024-07-04 08:06:19,926 DEBUG   HandlerThread:208093 [system_info.py:_probe_git():144] Probing git done
+2024-07-04 08:06:19,926 DEBUG   HandlerThread:208093 [system_info.py:probe():199] Probing system done
+2024-07-04 08:06:19,926 DEBUG   HandlerThread:208093 [system_monitor.py:probe():223] {'os': 'Linux-4.18.0-513.18.1.el8_9.x86_64-x86_64-with-glibc2.28', 'python': '3.10.0', 'heartbeatAt': '2024-07-04T12:06:19.886648', 'startedAt': '2024-07-04T12:06:19.284533', 'docker': None, 'cuda': None, 'args': ('-m', 'clan', '-rt', '../dev/data', '-o', 'batch_clan', '-ne', '30', '-lr', '0.001', '-ns', '100', '-x', '_PSALM_1b'), 'state': 'running', 'program': '/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train_multi_v2.py', 'codePathLocal': 'psalm_train_multi_v2.py', 'codePath': 'beta_release/psalm_train_multi_v2.py', 'git': {'remote': 'git@github.com:Protein-Sequence-Annotation/PSALM.git', 'commit': '6ad6b01b7e625f3400f519caf51e8acbca55937b'}, 'email': 'arpan_sarkar@g.harvard.edu', 'root': '/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM', 'host': 'holygpu7c0920.rc.fas.harvard.edu', 'username': 'kumareshk', 'executable': '/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/bin/python', 'cpu_count': 48, 'cpu_count_logical': 48, 'cpu_freq': {'current': 3289.2043541666703, 'min': 0.0, 'max': 0.0}, 'cpu_freq_per_core': [{'current': 3992.446, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3992.691, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3992.208, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3991.72, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3765.708, 'min': 0.0, 'max': 0.0}, {'current': 3992.442, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}, {'current': 3194.157, 'min': 0.0, 'max': 0.0}], 'disk': {'/': {'total': 49.9755859375, 'used': 13.641868591308594}}, 'gpu': 'NVIDIA A100-SXM4-80GB', 'gpu_count': 4, 'gpu_devices': [{'name': 'NVIDIA A100-SXM4-80GB', 'memory_total': 85899345920}, {'name': 'NVIDIA A100-SXM4-80GB', 'memory_total': 85899345920}, {'name': 'NVIDIA A100-SXM4-80GB', 'memory_total': 85899345920}, {'name': 'NVIDIA A100-SXM4-80GB', 'memory_total': 85899345920}], 'memory': {'total': 1006.9827156066895}}
+2024-07-04 08:06:19,926 INFO    HandlerThread:208093 [system_monitor.py:probe():224] Finished collecting system info
+2024-07-04 08:06:19,926 INFO    HandlerThread:208093 [system_monitor.py:probe():227] Publishing system info
+2024-07-04 08:06:19,926 DEBUG   HandlerThread:208093 [system_info.py:_save_conda():208] Saving list of conda packages installed into the current environment
+2024-07-04 08:06:20,672 INFO    Thread-13 :208093 [dir_watcher.py:_on_file_created():271] file/dir created: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240704_080619-435avaak/files/conda-environment.yaml
+2024-07-04 08:06:23,677 INFO    Thread-13 :208093 [dir_watcher.py:_on_file_modified():288] file/dir modified: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240704_080619-435avaak/files/conda-environment.yaml
+2024-07-04 08:06:23,685 DEBUG   HandlerThread:208093 [system_info.py:_save_conda():220] Saving conda packages done
+2024-07-04 08:06:23,689 INFO    HandlerThread:208093 [system_monitor.py:probe():229] Finished publishing system info
+2024-07-04 08:06:23,706 DEBUG   SenderThread:208093 [sender.py:send():382] send: files
+2024-07-04 08:06:23,706 INFO    SenderThread:208093 [sender.py:_save_file():1403] saving file wandb-metadata.json with policy now
+2024-07-04 08:06:23,730 DEBUG   HandlerThread:208093 [handler.py:handle_request():146] handle_request: python_packages
+2024-07-04 08:06:23,730 DEBUG   SenderThread:208093 [sender.py:send_request():409] send_request: python_packages
+2024-07-04 08:06:23,732 DEBUG   HandlerThread:208093 [handler.py:handle_request():146] handle_request: internal_messages
+2024-07-04 08:06:23,733 DEBUG   HandlerThread:208093 [handler.py:handle_request():146] handle_request: stop_status
+2024-07-04 08:06:23,734 DEBUG   SenderThread:208093 [sender.py:send():382] send: telemetry
+2024-07-04 08:06:23,734 DEBUG   SenderThread:208093 [sender.py:send_request():409] send_request: stop_status
+2024-07-04 08:06:24,035 INFO    wandb-upload_0:208093 [upload_job.py:push():131] Uploaded file /tmp/tmpdx_krgtkwandb/k77bm8xe-wandb-metadata.json
+2024-07-04 08:06:24,679 INFO    Thread-13 :208093 [dir_watcher.py:_on_file_created():271] file/dir created: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240704_080619-435avaak/files/requirements.txt
+2024-07-04 08:06:24,679 INFO    Thread-13 :208093 [dir_watcher.py:_on_file_created():271] file/dir created: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240704_080619-435avaak/files/wandb-metadata.json
+2024-07-04 08:06:24,901 DEBUG   HandlerThread:208093 [handler.py:handle_request():146] handle_request: status_report
+2024-07-04 08:06:28,683 INFO    Thread-13 :208093 [dir_watcher.py:_on_file_created():271] file/dir created: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240704_080619-435avaak/files/output.log
+2024-07-04 08:06:30,651 DEBUG   HandlerThread:208093 [handler.py:handle_request():146] handle_request: status_report
+2024-07-04 08:06:30,685 INFO    Thread-13 :208093 [dir_watcher.py:_on_file_modified():288] file/dir modified: /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240704_080619-435avaak/files/output.log
+2024-07-04 08:06:35,653 DEBUG   HandlerThread:208093 [handler.py:handle_request():146] handle_request: status_report
+2024-07-04 08:06:38,731 DEBUG   HandlerThread:208093 [handler.py:handle_request():146] handle_request: stop_status
+2024-07-04 08:06:38,731 DEBUG   HandlerThread:208093 [handler.py:handle_request():146] handle_request: internal_messages
+2024-07-04 08:06:38,732 DEBUG   SenderThread:208093 [sender.py:send_request():409] send_request: stop_status
+2024-07-04 08:06:40,853 DEBUG   HandlerThread:208093 [handler.py:handle_request():146] handle_request: status_report
+2024-07-04 08:06:45,850 DEBUG   HandlerThread:208093 [handler.py:handle_request():146] handle_request: status_report
+2024-07-04 08:06:45,865 INFO    memory    :208093 [interfaces.py:monitor():140] Process proc.memory.rssMB has exited.
+2024-07-04 08:06:45,866 DEBUG   SystemMonitor:208093 [system_monitor.py:_start():172] Starting system metrics aggregation loop
+2024-07-04 08:06:45,866 DEBUG   SystemMonitor:208093 [system_monitor.py:_start():179] Finished system metrics aggregation loop
+2024-07-04 08:06:45,866 DEBUG   SystemMonitor:208093 [system_monitor.py:_start():183] Publishing last batch of metrics
+2024-07-04 08:06:45,867 DEBUG   SenderThread:208093 [sender.py:send():382] send: stats
+2024-07-04 08:06:46,790 INFO    MainThread:208093 [internal.py:handle_exit():76] Internal process exited

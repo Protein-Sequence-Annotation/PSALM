@@ -1,0 +1,28 @@
+2024-07-04 08:21:35,076 INFO    MainThread:210310 [wandb_setup.py:_flush():76] Current SDK version is 0.16.3
+2024-07-04 08:21:35,076 INFO    MainThread:210310 [wandb_setup.py:_flush():76] Configure stats pid to 210310
+2024-07-04 08:21:35,076 INFO    MainThread:210310 [wandb_setup.py:_flush():76] Loading settings from /n/home05/kumareshk/.config/wandb/settings
+2024-07-04 08:21:35,076 INFO    MainThread:210310 [wandb_setup.py:_flush():76] Loading settings from /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/settings
+2024-07-04 08:21:35,076 INFO    MainThread:210310 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2024-07-04 08:21:35,076 INFO    MainThread:210310 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2024-07-04 08:21:35,076 INFO    MainThread:210310 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'beta_release/psalm_train_multi_v2.py', 'program_abspath': '/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train_multi_v2.py', 'program': '/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train_multi_v2.py'}
+2024-07-04 08:21:35,076 INFO    MainThread:210310 [wandb_init.py:_log_setup():526] Logging user logs to /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240704_082135-5wil4e1o/logs/debug.log
+2024-07-04 08:21:35,076 INFO    MainThread:210310 [wandb_init.py:_log_setup():527] Logging internal logs to /net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/wandb/run-20240704_082135-5wil4e1o/logs/debug-internal.log
+2024-07-04 08:21:35,076 INFO    MainThread:210310 [wandb_init.py:init():566] calling init triggers
+2024-07-04 08:21:35,076 INFO    MainThread:210310 [wandb_init.py:init():573] wandb.init called with sweep_config: {}
+config: {'epochs': 30, 'lr': 0.001, 'Architecture': 'Fam', 'dataset': 'Pfam Seed'}
+2024-07-04 08:21:35,076 INFO    MainThread:210310 [wandb_init.py:init():616] starting backend
+2024-07-04 08:21:35,076 INFO    MainThread:210310 [wandb_init.py:init():620] setting up manager
+2024-07-04 08:21:35,093 INFO    MainThread:210310 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2024-07-04 08:21:35,097 INFO    MainThread:210310 [wandb_init.py:init():628] backend started and connected
+2024-07-04 08:21:35,130 INFO    MainThread:210310 [wandb_init.py:init():720] updated telemetry
+2024-07-04 08:21:35,163 INFO    MainThread:210310 [wandb_init.py:init():753] communicating run to backend with 90.0 second timeout
+2024-07-04 08:21:35,462 INFO    MainThread:210310 [wandb_run.py:_on_init():2262] communicating current version
+2024-07-04 08:21:35,520 INFO    MainThread:210310 [wandb_run.py:_on_init():2271] got version response upgrade_message: "wandb version 0.17.4 is available!  To upgrade, please run:\n $ pip install wandb --upgrade"
+
+2024-07-04 08:21:35,520 INFO    MainThread:210310 [wandb_init.py:init():804] starting run threads in backend
+2024-07-04 08:21:39,517 INFO    MainThread:210310 [wandb_run.py:_console_start():2241] atexit reg
+2024-07-04 08:21:39,517 INFO    MainThread:210310 [wandb_run.py:_redirect():2096] redirect: wrap_raw
+2024-07-04 08:21:39,517 INFO    MainThread:210310 [wandb_run.py:_redirect():2161] Wrapping output streams.
+2024-07-04 08:21:39,517 INFO    MainThread:210310 [wandb_run.py:_redirect():2186] Redirects installed.
+2024-07-04 08:21:39,519 INFO    MainThread:210310 [wandb_init.py:init():847] run started, returning control to user process
+2024-07-04 08:32:05,024 WARNING MsgRouterThr:210310 [router.py:message_loop():77] message_loop has been closed

@@ -1,0 +1,112 @@
+
+Epochs completed:   0%|          | 0/80 [00:00<?, ?it/s]
+Epoch 0 Loss 1.2407511472702026 Validation: 5.073121112781567
+
+Epochs completed:   1%|▏         | 1/80 [1:49:23<144:01:22, 6563.07s/it]
+Epoch 1 Loss 0.6877173781394958 Validation: 5.279647275641724
+
+Epochs completed:   2%|▎         | 2/80 [3:38:30<142:00:07, 6553.94s/it]
+Epoch 2 Loss 0.5538905262947083 Validation: 4.9557723710825154
+
+
+Epochs completed:   5%|▌         | 4/80 [7:17:24<138:33:10, 6563.03s/it]
+Epoch 3 Loss 0.4795245826244354 Validation: 4.963414162069887
+
+Epochs completed:   6%|▋         | 5/80 [9:07:03<136:50:57, 6568.76s/it]
+Epoch 4 Loss 0.4320933520793915 Validation: 5.1953624329724155
+------------------------------------------------
+Epoch 5 Loss 0.39566415548324585 Validation: 5.98706456724104
+
+
+Epochs completed:   9%|▉         | 7/80 [12:45:32<132:59:40, 6558.63s/it]
+Epoch 6 Loss 0.36696967482566833 Validation: 5.475573406114683
+
+Epochs completed:  10%|█         | 8/80 [14:33:48<130:46:46, 6538.98s/it]
+Epoch 7 Loss 0.34531763195991516 Validation: 6.4566721470801385
+
+Epochs completed:  11%|█▏        | 9/80 [16:22:18<128:46:44, 6529.64s/it]
+Epoch 8 Loss 0.32839909195899963 Validation: 6.372780133079696
+
+Epochs completed:  12%|█▎        | 10/80 [18:10:36<126:46:35, 6519.94s/it]
+Epoch 9 Loss 0.3130841851234436 Validation: 6.623896411487034
+------------------------------------------------
+Epoch 10 Loss 0.30205389857292175 Validation: 6.573528164035672
+
+Epochs completed:  14%|█▍        | 11/80 [19:59:15<124:57:49, 6519.84s/it]
+Epoch 11 Loss 0.2911415100097656 Validation: 6.621302726504567
+
+Epochs completed:  15%|█▌        | 12/80 [21:48:23<123:18:47, 6528.34s/it]
+Epoch 12 Loss 0.33215197920799255 Validation: 7.306793379259633
+
+Epochs completed:  16%|█▋        | 13/80 [23:37:11<121:29:53, 6528.27s/it]
+Epoch 13 Loss 0.2925770580768585 Validation: 8.11206289438101
+
+Epochs completed:  18%|█▊        | 14/80 [25:26:22<119:48:36, 6535.10s/it]
+Epoch 14 Loss nan Validation: nan
+
+Epochs completed:  19%|█▉        | 15/80 [27:15:23<118:01:41, 6536.94s/it]
+Epoch 15 Loss nan Validation: nan
+
+
+Epochs completed:  21%|██▏       | 17/80 [30:53:08<114:22:22, 6535.59s/it]
+Epoch 16 Loss nan Validation: nan
+
+Epochs completed:  22%|██▎       | 18/80 [32:42:03<112:33:16, 6535.43s/it]
+Epoch 17 Loss nan Validation: nan
+------------------------------------------------
+Epoch 18 Loss nan Validation: nan
+
+
+Epochs completed:  25%|██▌       | 20/80 [36:19:21<108:47:19, 6527.33s/it]
+Epoch 19 Loss nan Validation: nan
+------------------------------------------------
+Epoch 20 Loss nan Validation: nan
+
+Epochs completed:  26%|██▋       | 21/80 [38:08:09<106:58:49, 6527.62s/it]
+Epoch 21 Loss nan Validation: nan
+
+
+Epochs completed:  29%|██▉       | 23/80 [41:45:25<103:18:34, 6524.81s/it]
+Epoch 22 Loss nan Validation: nan
+------------------------------------------------
+Epoch 23 Loss nan Validation: nan
+
+Epochs completed:  30%|███       | 24/80 [43:34:29<101:35:03, 6530.42s/it]
+Epoch 24 Loss nan Validation: nan
+
+Epochs completed:  31%|███▏      | 25/80 [45:23:18<99:45:57, 6530.13s/it]
+Epoch 25 Loss nan Validation: nan
+
+
+Epochs completed:  34%|███▍      | 27/80 [49:00:47<96:06:39, 6528.29s/it]
+Epoch 26 Loss nan Validation: nan
+
+Epochs completed:  35%|███▌      | 28/80 [50:49:26<94:15:27, 6525.53s/it]
+Epoch 27 Loss nan Validation: nan
+
+Epochs completed:  36%|███▋      | 29/80 [52:38:07<92:25:31, 6524.15s/it]
+Epoch 28 Loss nan Validation: nan
+
+Epochs completed:  38%|███▊      | 30/80 [54:27:05<90:40:27, 6528.55s/it]
+Epoch 29 Loss nan Validation: nan
+
+Epochs completed:  39%|███▉      | 31/80 [56:16:51<89:05:39, 6545.70s/it]
+Epoch 30 Loss nan Validation: nan
+
+Epochs completed:  40%|████      | 32/80 [58:06:28<87:24:04, 6555.09s/it]
+Epoch 31 Loss nan Validation: nan
+
+Epochs completed:  41%|████▏     | 33/80 [59:54:52<85:22:50, 6539.80s/it]
+Epoch 32 Loss nan Validation: nan
+
+Epochs completed:  42%|████▎     | 34/80 [61:43:16<83:25:27, 6528.87s/it]
+Epoch 33 Loss nan Validation: nan
+------------------------------------------------
+Epoch 34 Loss nan Validation: nan
+
+Epochs completed:  44%|████▍     | 35/80 [63:31:00<81:22:04, 6509.44s/it]
+Epoch 35 Loss nan Validation: nan
+
+Epochs completed:  45%|████▌     | 36/80 [65:18:51<79:25:07, 6497.89s/it]
+Epoch 36 Loss nan Validation: nan
+

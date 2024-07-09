@@ -1,0 +1,316 @@
+{
+    "os": "Linux-4.18.0-513.18.1.el8_9.x86_64-x86_64-with-glibc2.28",
+    "python": "3.10.0",
+    "heartbeatAt": "2024-07-03T21:02:53.130951",
+    "startedAt": "2024-07-03T21:02:52.549281",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "-m",
+        "clan",
+        "-rt",
+        "../dev/data",
+        "-o",
+        "batch_clan",
+        "-ne",
+        "30",
+        "-lr",
+        "0.001",
+        "-ns",
+        "100",
+        "-v",
+        "-x",
+        "_PSALM_1b"
+    ],
+    "state": "running",
+    "program": "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM/beta_release/psalm_train_multi_v2.py",
+    "codePathLocal": "psalm_train_multi_v2.py",
+    "codePath": "beta_release/psalm_train_multi_v2.py",
+    "git": {
+        "remote": "git@github.com:Protein-Sequence-Annotation/PSALM.git",
+        "commit": "6ad6b01b7e625f3400f519caf51e8acbca55937b"
+    },
+    "email": "arpan_sarkar@g.harvard.edu",
+    "root": "/net/holy-nfsisilon/ifs/rc_labs/eddy_lab/Lab/protein_annotation_dl/PSALM",
+    "host": "holygpu7c0920.rc.fas.harvard.edu",
+    "username": "kumareshk",
+    "executable": "/n/eddy_lab/Lab/protein_annotation_dl/envs/protllm/bin/python",
+    "cpu_count": 48,
+    "cpu_count_logical": 48,
+    "cpu_freq": {
+        "current": 3377.9152500000037,
+        "min": 0.0,
+        "max": 0.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3992.696,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3992.696,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3992.695,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3991.845,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3991.857,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3697.486,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3992.271,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3992.486,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3992.626,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3992.27,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3992.485,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3194.157,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3992.272,
+            "min": 0.0,
+            "max": 0.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 49.9755859375,
+            "used": 13.653076171875
+        }
+    },
+    "gpu": "NVIDIA A100-SXM4-80GB",
+    "gpu_count": 4,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA A100-SXM4-80GB",
+            "memory_total": 85899345920
+        },
+        {
+            "name": "NVIDIA A100-SXM4-80GB",
+            "memory_total": 85899345920
+        },
+        {
+            "name": "NVIDIA A100-SXM4-80GB",
+            "memory_total": 85899345920
+        },
+        {
+            "name": "NVIDIA A100-SXM4-80GB",
+            "memory_total": 85899345920
+        }
+    ],
+    "memory": {
+        "total": 1006.9827156066895
+    }
+}
