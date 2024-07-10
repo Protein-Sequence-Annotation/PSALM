@@ -4,8 +4,8 @@
 #SBATCH -p eddy
 #SBATCH -c 16
 #SBATCH -t 7-00:00
-#SBATCH -o logs/beta_multitrain_inf2.out
-#SBATCH -e logs/beta_multitrain_inf2.err
+#SBATCH -o logs/beta_multitrain_inf.out
+#SBATCH -e logs/beta_multitrain_inf.err
 #SBATCH --mem 60000 #80GB
 #SBATCH --gres=gpu:nvidia_a100-sxm4-80gb:4
 
@@ -17,4 +17,4 @@ module load Mambaforge
 mamba deactivate
 mamba activate protllm
 
-python psalm_train_multi.py -m clan -o batch_clan -ne 10 -lr 0.001 -x _PSALM_1b
+python psalm_train_multi.py -m fam -o batch_fam -ne 10 -lr 0.001 -x _PSALM_1b -nl

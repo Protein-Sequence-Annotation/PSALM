@@ -65,10 +65,10 @@ def loadAll(rank, num_gpus, args, save_path, train_dict, val_dict):
 
     if args.model == 'clan': # Clan batch model
         classifier = cf.ClanLSTMbatch(data_utils.embedding_dim,data_utils.clan_count).to(rank)
-        train_fn = mu.train_step_clan_batch
+        train_fn = mu.train_step_batch
     elif args.model == 'fam': # fam batch model
         classifier = cf.FamLSTMbatch(data_utils.embedding_dim, data_utils.maps, rank).to(rank)
-        train_fn = mu.train_step_fam_batch
+        train_fn = mu.train_step_batch
     else:
         print('Incorrect Model choice')
         sys.exit(2)
@@ -82,27 +82,24 @@ def loadAll(rank, num_gpus, args, save_path, train_dict, val_dict):
 
     # Load validation set if master process - will change once parallelized
 
-    if args.validation and rank == 0:
+    if not args.no_validation:
         dataset = data_utils.get_dataset('validation') # Get corresponding dataset from fasta
         dataset = data_utils.filter_batches(dataset, val_dict.keys()) # Still needed for validation
-        val_loader = data_utils.get_dataloader(dataset, rank, 1) # num_gpus = 1 for validation
-
+        val_loader = data_utils.get_dataloader(dataset, rank, num_gpus) # num_gpus = ? for validation
     
     # Parameters for training loop
-    
 
     loss_fn = nn.CrossEntropyLoss() # fam loss is hard coded
-    lr = args.learning_rate/num_gpus # lr 1e-3 for train with L1,  1e-4 for train without L1, 1e-5 for fine tune EFFECTIVE LR
+    lr = args.learning_rate/num_gpus # EFFECTIVElr 1e-3 for train with L1,  1e-4 for train without L1, 1e-5 for fine tune
     optimizer = torch.optim.Adam(classifier.parameters(), lr=lr)
     # lower LR if less than 10% decrease - can change to schedule free optimizer
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=0.1, threshold_mode="rel")
 
     num_epochs = args.num_epochs
 
-
     # Initialize wandb if master process
 
-    if args.log and rank == 0:
+    if not args.no_log and rank == 0:
         run = wandb.init(project=args.project, 
                         entity='eddy_lab',
                         config={"epochs": num_epochs,
@@ -110,13 +107,13 @@ def loadAll(rank, num_gpus, args, save_path, train_dict, val_dict):
                                 "Architecture": "Fam",
                                 "dataset": 'Pfam Seed'})
 
-    
     # Training loop
     
     dataset = data_utils.get_dataset('train') # Get corresponding dataset from fasta
     data_loader = data_utils.get_dataloader(dataset, rank, num_gpus) # Parallelize data loader
 
     best_validation_loss = 1e3 # Start with high loss
+    l1_flag = False # Flag to turn on/off L1 loss
     dist.barrier() # Synchronize processes
     
     for epoch in tqdm(range(num_epochs), total=num_epochs, desc='Epochs completed', disable= rank != 0):
@@ -127,17 +124,27 @@ def loadAll(rank, num_gpus, args, save_path, train_dict, val_dict):
                                 optimizer = optimizer,
                                 device = rank,
                                 data_utils = data_utils,
-                                hmm_dict = train_dict)
+                                hmm_dict = train_dict,
+                                l1 = l1_flag,
+                                fam = args.model=='fam')
         
         dist.reduce(epoch_loss, dst=0, op=dist.ReduceOp.SUM) # Sum epoch loss from all processes
         dist.barrier() # Synchronize processes
 
         # Compute validation loss
 
-        if args.validation and rank == 0:
-            # print(f'Validation at {datetime.now()}')
-            # sys.stdout.flush()
-            validation_loss = mu.validate_batch(val_loader, classifier, loss_fn, rank, data_utils, val_dict, fam=args.model=='fam')
+        if not args.no_validation:
+
+            validation_loss = mu.validate_batch(data_loader = val_loader,
+                                                classifier = classifier,
+                                                loss_fn = loss_fn,
+                                                device = rank,
+                                                data_utils = data_utils,
+                                                hmm_dict = val_dict,
+                                                fam = args.model=='fam')
+
+            dist.reduce(validation_loss, dst=0, op=dist.ReduceOp.SUM) # Sum epoch loss from all processes
+            dist.barrier() # Synchronize processes
         else:
             validation_loss = 0.
 
@@ -147,7 +154,7 @@ def loadAll(rank, num_gpus, args, save_path, train_dict, val_dict):
             print(f'Epoch {epoch} Loss {epoch_loss} Validation: {validation_loss}')
             print('------------------------------------------------')
             
-            if args.log:
+            if not args.no_log:
                 wandb.log({'Epoch loss': epoch_loss, 'Validation Loss': validation_loss, 'Learning rate': optimizer.param_groups[0]['lr']})
 
             if validation_loss < best_validation_loss: # Check for better performing model

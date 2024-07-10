@@ -40,6 +40,7 @@ class FamLSTMbatch(nn.Module):
     def __init__(self, embed_dim, maps, device):
         super().__init__()
         self.clan_fam_matrix = maps['clan_family_matrix'].to(device)
+        self.f = self.clan_fam_matrix.shape[1]
 
         self.lstm = nn.LSTM(embed_dim, embed_dim, bidirectional=True)
 

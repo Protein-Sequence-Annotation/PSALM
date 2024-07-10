@@ -200,7 +200,8 @@ def train_step_clan_batch(data_loader,
                optimizer,
                device,
                data_utils,
-               hmm_dict):
+               hmm_dict,
+               l1):
 
     """
     Runs a train step for one batch - trains clan prediction head
@@ -212,10 +213,11 @@ def train_step_clan_batch(data_loader,
         optimizer (torch.optim.Optimizer): Optimizer for the classifier
         device (str): GPU / CPU selection
         data_utils (DataUtils): Member functions and helpers for processing HMM data
-        hmm_dict (Dict): dictionary with parsed results of hmmscan for current shard
+        hmm_dict (Dict): Dictionary with parsed results of hmmscan for train data
+        l1 (bool): Integer flag to turn on or off the l1 loss
 
     Returns:
-        epoch_loss (torch.Float32): batch averaged loss over the entire epoch on this device
+        epoch_loss (torch.Float32): Batch averaged loss over the entire epoch on this device
     """
 
     epoch_loss = torch.tensor(0.).to(device)
@@ -240,9 +242,16 @@ def train_step_clan_batch(data_loader,
         target_vectors = np.zeros((len(sequence_labels), embedding.shape[1]))
         mask = torch.zeros((embedding.shape[0], embedding.shape[1]))
 
+        if l1: # Store raw vector if L1 loss is computed
+            target_vectors_raw = np.zeros((len(sequence_labels), embedding.shape[1], data_utils.clan_count))
+
         for idx, label in enumerate(sequence_labels):
 
             _, clan_vector = hu.generate_domain_position_list(hmm_dict, label, data_utils.maps)
+            
+            if l1: # Store raw vector if L1 loss is computed
+                target_vectors_raw[idx, 1:stop_indices[idx]+1] = clan_vector[:stop_indices[idx]]
+            
             clan_vector = np.argmax(clan_vector, axis=1)
         
             target_vectors[idx, 1:stop_indices[idx]+1] = clan_vector[:stop_indices[idx]]
@@ -250,29 +259,35 @@ def train_step_clan_batch(data_loader,
         
         target_vectors = torch.tensor(target_vectors, dtype=torch.long).to(device)
         mask = mask.to(device)
-        # Logits are the raw output of the classifier!!! This should be used for CrossEntropyLoss()
+        
+        if l1:
+            target_vectors_raw = torch.tensor(target_vectors_raw).to(device)
+
         preds = classifier(embedding, mask)
         
         # loss is averaged over the whole sequence
-        loss = loss_fn(preds[mask.bool()], target_vectors[mask.bool()]) # Average residue loss over all sequences in the batch
+        if l1:
+            loss = F.cross_entropy(preds[mask.bool()], target_vectors[mask.bool()]) + \
+                0.05*F.l1_loss(preds[mask.bool()], target_vectors_raw[mask.bool()]) # 0.05 is a hyperparam
+        else:
+            loss = loss_fn(preds[mask.bool()], target_vectors[mask.bool()])
         
         loss.backward()
         optimizer.step()
 
         epoch_loss += loss.item()
-
-        # if batch_id == 2:
-        #     return epoch_loss / n_batches
         
     return epoch_loss / n_batches
 
-def train_step_fam_batch(data_loader,
+def train_step_batch(data_loader,
                classifier,
                loss_fn,
                optimizer,
                device,
                data_utils,
-               hmm_dict):
+               hmm_dict,
+               l1,
+               fam):
 
     """
     Runs a train step for one batch - trains family prediction head
@@ -284,11 +299,12 @@ def train_step_fam_batch(data_loader,
         optimizer (torch.optim.Optimizer): Optimizer for the classifier
         device (str): GPU / CPU selection
         data_utils (DataUtils): Member functions and helpers for processing HMM data
-        hmm_dict (Dict): dictionary with parsed results of hmmscan for current shard
+        hmm_dict (Dict): Dictionary with parsed results of hmmscan for current shard
+        l1 (bool): Flag to turn on or off the l1 loss
+        fam (bool): Flag indicating fam/clan model
 
     Returns:
-        shard_loss (torch.Float32): loss over the entire shard
-        n_batches (torch.Int): number of batches
+        epoch_loss (torch.Float32): Average residue loss over the entire epoch
     """
 
     epoch_loss = torch.tensor(0.).to(device)
@@ -310,33 +326,135 @@ def train_step_fam_batch(data_loader,
         stop_indices = [min(len(seq), data_utils.length_limit) for seq in seqs]
 
         target_vectors = np.zeros((len(sequence_labels), embedding.shape[1]))
-        clan_support = np.zeros((len(sequence_labels), embedding.shape[1], data_utils.clan_count))
         mask = torch.zeros((embedding.shape[0], embedding.shape[1]))
+        
+        if l1: # Store raw vector if L1 loss is computed
+            target_vectors_raw = np.zeros((len(sequence_labels), embedding.shape[1], data_utils.fam_count))
+        if fam:
+            clan_support = np.zeros((len(sequence_labels), embedding.shape[1], data_utils.clan_count))
 
         for idx, label in enumerate(sequence_labels):
 
             fam_vector, clan_vector = hu.generate_domain_position_list(hmm_dict, label, data_utils.maps)
-            fam_vector = np.argmax(fam_vector, axis=1)
-        
-            target_vectors[idx, 1:stop_indices[idx]+1] = fam_vector[:stop_indices[idx]]
+
+            if fam:
+                clan_support[idx, 1:stop_indices[idx]+1] = clan_vector[:stop_indices[idx]]
+                if l1: # Store raw vector if L1 loss is computed
+                    target_vectors_raw[idx, 1:stop_indices[idx]+1] = fam_vector[:stop_indices[idx]]
+                fam_vector = np.argmax(fam_vector, axis=1)
+                target_vectors[idx, 1:stop_indices[idx]+1] = fam_vector[:stop_indices[idx]]
+            else:
+                if l1: # Store raw vector if L1 loss is computed
+                    target_vectors_raw[idx, 1:stop_indices[idx]+1] = clan_vector[:stop_indices[idx]]
+                clan_vector = np.argmax(clan_vector, axis=1)
+                target_vectors[idx, 1:stop_indices[idx]+1] = clan_vector[:stop_indices[idx]]
+
             mask[idx, 1:stop_indices[idx]+1] = 1
-            clan_support[idx, 1:stop_indices[idx]+1] = clan_vector[:stop_indices[idx]]
         
         target_vectors = torch.tensor(target_vectors, dtype=torch.long).to(device)
         mask = mask.to(device)
-        clan_support = torch.tensor(clan_support, dtype=torch.float).to(device)
 
-        preds, _ = classifier(embedding, mask, clan_support)
+        if l1:
+            target_vectors_raw = torch.tensor(target_vectors_raw).to(device)
 
-        loss = F.cross_entropy(preds[mask.bool()], target_vectors[mask.bool()]) # Average residue loss over all sequences in the batch
+        if fam:
+            clan_support = torch.tensor(clan_support, dtype=torch.float).to(device)
+            preds, _ = classifier(embedding, mask, clan_support)
+        else:
+            preds = classifier(embedding, mask)
+
+        # Average residue loss over all sequences in the batch
+        if l1:
+            loss = F.cross_entropy(preds[mask.bool()], target_vectors[mask.bool()]) + \
+                0.05*F.l1_loss(preds[mask.bool()], target_vectors_raw[mask.bool()]) # 0.05 is a hyperparam
+        else:
+            loss = loss_fn(preds[mask.bool()], target_vectors[mask.bool()]) # Changed from F.cross_entropy()
         
         loss.backward()
         optimizer.step()
 
         epoch_loss += loss.item()
+
+        if batch_id %1000 == 0:
+            print(f'Rank {device} finished batch {batch_id} at {datetime.now()}')
+            sys.stdout.flush()
         
     return epoch_loss / n_batches
 
+###########################################################
+# Validation step
+###########################################################
+
+def validate_batch(data_loader,
+               classifier,
+               loss_fn,
+               device,
+               data_utils,
+               hmm_dict,
+               fam):
+
+    """
+    Runs a validation step for one batch - only clan prediction head
+
+    Args:
+        data_loader (DataLoader): A data loader object with the current dataset
+        classifier (nn.Module): The classifier head to decode esm embeddings
+        device (str): GPU / CPU selection
+        data_utils (DataUtils): Member functions and helpers for processing HMM data
+        hmm_dict (Dict): Dictionary with parsed results of hmmscan for current shard
+        fam (bool): Flag indicating family/clan model
+
+    Returns:
+        validation_loss (float): Loss value for validation set
+    """
+
+    n_batches = len(data_loader)
+    classifier.eval()
+
+    with torch.inference_mode():
+
+        validation_loss = torch.tensor(0.).to(device)
+
+        for batch_id, (labels, seqs, tokens) in enumerate(data_loader):
+
+            tokens = tokens.to(device)
+            embedding = data_utils.get_embedding(tokens)
+
+            sequence_labels = [x.split()[0] for x in labels]
+            stop_indices = [min(len(seq), data_utils.length_limit) for seq in seqs]
+
+            target_vectors = np.zeros((len(sequence_labels), embedding.shape[1]))
+            mask = torch.zeros((embedding.shape[0], embedding.shape[1]))
+            clan_support = np.zeros((len(sequence_labels), embedding.shape[1], data_utils.clan_count)) # Remove hard coding
+
+            for idx, label in enumerate(sequence_labels):
+
+                if fam:
+                    target, support = hu.generate_domain_position_list(hmm_dict, label, data_utils.maps)
+                    clan_support[idx, 1:stop_indices[idx]+1] = support[:stop_indices[idx]]
+                else:
+                    _, target = hu.generate_domain_position_list(hmm_dict, label, data_utils.maps)
+                
+                target = np.argmax(target, axis=1)
+            
+                target_vectors[idx, 1:stop_indices[idx]+1] = target[:stop_indices[idx]]
+                mask[idx, 1:stop_indices[idx]+1] = 1
+            
+            target_vectors = torch.tensor(target_vectors, dtype=torch.long).to(device)
+            mask = mask.to(device)
+            clan_support = torch.tensor(clan_support, dtype=torch.float).to(device)
+
+            if fam:
+                preds, _ = classifier(embedding, mask, clan_support)
+            else:
+                preds = classifier(embedding, mask)
+
+            loss = loss_fn(preds[mask.bool()], target_vectors[mask.bool()]) # Average residue loss over all sequences in the batch
+
+            validation_loss += loss.item()
+
+    return validation_loss / n_batches
+    
 ###########################################################
 # Test step
 ###########################################################
@@ -553,79 +671,3 @@ def test_step_fam(data_loader,
                 shard_preds[label]['clan_true'] = clan_vector.numpy()
 
     return shard_preds, n_batches
-
-###########################################################
-# Validation step
-###########################################################
-
-def validate_batch(data_loader,
-               classifier,
-               loss_fn,
-               device,
-               data_utils,
-               hmm_dict,
-               fam=True):
-
-    """
-    Runs a validation step for one batch - only clan prediction head
-
-    Args:
-        data_loader (DataLoader): A data loader object with the current dataset
-        classifier (nn.Module): The classifier head to decode esm embeddings
-        device (str): GPU / CPU selection
-        data_utils (DataUtils): Member functions and helpers for processing HMM data
-        hmm_dict (Dict): dictionary with parsed results of hmmscan for current shard
-
-    Returns:
-        all_preds (Dict): predictions for each sequence: top 2 values, indices, target
-        shard_length (torch.Int): length of all sequences in shard
-    """
-
-    n_batches = len(data_loader)
-    classifier.eval()
-
-    with torch.inference_mode():
-
-        shard_loss = 0
-
-        for batch_id, (labels, seqs, tokens) in enumerate(data_loader):
-
-            tokens = tokens.to(device)
-            embedding = data_utils.get_embedding(tokens)
-
-            sequence_labels = [x.split()[0] for x in labels]
-            stop_indices = [min(len(seq), data_utils.length_limit) for seq in seqs]
-
-            target_vectors = np.zeros((len(sequence_labels), embedding.shape[1]))
-            mask = torch.zeros((embedding.shape[0], embedding.shape[1]))
-            clan_support = np.zeros((len(sequence_labels), embedding.shape[1], data_utils.clan_count)) # Remove hard coding
-
-            for idx, label in enumerate(sequence_labels):
-
-                if fam:
-                    target, support = hu.generate_domain_position_list(hmm_dict, label, data_utils.maps)
-                    clan_support[idx, 1:stop_indices[idx]+1] = support[:stop_indices[idx]]
-                else:
-                    _, target = hu.generate_domain_position_list(hmm_dict, label, data_utils.maps)
-                
-                target = np.argmax(target, axis=1)
-            
-                target_vectors[idx, 1:stop_indices[idx]+1] = target[:stop_indices[idx]]
-                mask[idx, 1:stop_indices[idx]+1] = 1
-            
-            target_vectors = torch.tensor(target_vectors, dtype=torch.long).to(device)
-            mask = mask.to(device)
-            clan_support = torch.tensor(clan_support, dtype=torch.float).to(device)
-
-            # Logits are the raw output of the classifier!!! This should be used for CrossEntropyLoss()
-            if fam:
-                preds, _ = classifier(embedding, mask, clan_support)
-            else:
-                preds = classifier(embedding, mask)
-
-            # loss is averaged over the whole sequence
-            loss = loss_fn(preds[mask.bool()], target_vectors[mask.bool()]) # Average residue loss over all sequences in the batch
-
-            shard_loss += loss.item()
-
-    return shard_loss / n_batches
