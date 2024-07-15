@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from torch.optim.lr_scheduler import _LRScheduler
 import torch.nn.functional as F
 import hmmscan_utils as hu
 import pickle
@@ -8,6 +9,8 @@ from pathlib import Path
 from esm import pretrained, FastaBatchedDataset
 import sys
 from datetime import datetime
+import cProfile, pstats
+import random
 
 ###########################################################
 # Functions for data processing and model creation
@@ -28,29 +31,60 @@ def set_torch_seeds(seed):
     return
 
 ##############################################################
+# Custom LR scheduler for warmup and plateaus
+##############################################################
+
+class CustomLR(_LRScheduler):
+    def __init__(self, optimizer, warmup_steps, after_warmup_scheduler):
+        self.warmup_steps = warmup_steps
+        self.step_count = 0
+        self.after_warmup_scheduler = after_warmup_scheduler
+        self.base_lrs = [group['lr'] for group in optimizer.param_groups]
+        super(CustomLR, self).__init__(optimizer)
+
+    def get_lr(self):
+        if self.step_count < self.warmup_steps:
+            warmup_factor = self.step_count / self.warmup_steps
+            return [base_lr * warmup_factor for base_lr in self.base_lrs]
+        else:
+            self.after_warmup_scheduler.step()  # Update the after warmup scheduler
+            return [group['lr'] for group in self.optimizer.param_groups]
+
+    def step(self, epoch=None):
+        self.step_count += 1
+        super(CustomLR, self).step(epoch)
+
+##############################################################
 # Dataset class to process sequences, create targets and batch
 ##############################################################
 
 class DistributedBatchSampler(torch.utils.data.Sampler):
 
-    def __init__(self, batches, rank, num_gpus):
+    def __init__(self, batches, rank, num_gpus, seed=100):
         self.batches = batches
         self.rank = rank
         self.num_gpus = num_gpus
+        self.seed = seed
+        if self.seed is not None:
+            self.rng = random.Random(self.seed)
         self.max_length_divisible = len(self.batches) - (len(self.batches) % self.num_gpus)
+        self.distributed_indices = list(range(self.rank, self.max_length_divisible, self.num_gpus))
 
     def __iter__(self):
-        # Distribute batches across processes
-        # If not divisible by num_gpus, then something has to be done!!!
-        for i in range(self.rank, self.max_length_divisible, self.num_gpus): # Subtracting due to titin issue
+
+        # self.rng.shuffle(self.distributed_indices) # UNCOMMENT FOR SHUFFLING
+        for i in self.distributed_indices:
             yield self.batches[i]
+        # # Distribute batches across processes
+        # for i in range(self.rank, self.max_length_divisible, self.num_gpus): 
+        #     yield self.batches[i]
 
     def __len__(self):
         return self.max_length_divisible // self.num_gpus
 
 class DataUtils():
 
-    def __init__(self, root, esm_model_name, limit, mode, device, alt_suffix=""):
+    def __init__(self, root, esm_model_name, limit, device):
 
         with open(Path('info_files') / 'maps.pkl', 'rb') as f:
             self.maps = pickle.load(f)
@@ -63,7 +97,6 @@ class DataUtils():
         self.embedding_dim = self.esm_model.embed_dim
         self.length_limit = limit
         self.tokens_per_batch = 8192 # Can edit as needed
-        self.alt_suffix = alt_suffix
         self.onehot_alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
         for param in self.esm_model.parameters():
@@ -71,7 +104,7 @@ class DataUtils():
         
         self.esm_model.eval()
     
-    def get_dataset(self, mode):
+    def get_dataset(self, mode, suffix):
         
         """
         Return FastaBatchedDataset from the esm model
@@ -83,7 +116,7 @@ class DataUtils():
             dataset (Dataset): dataset with all sequences in shard
         """
 
-        return FastaBatchedDataset.from_file(self.root / f'PSALM_1b_{mode}.fasta')
+        return FastaBatchedDataset.from_file(self.root / f'PSALM_1b_{mode}_{suffix}.fasta')
 
     def get_custom_dataset(self, fpath):
         
@@ -167,117 +200,10 @@ class DataUtils():
         """
 
         return self.esm_model(tokens, repr_layers=[self.last_layer], return_contacts=False)["representations"][self.last_layer]
-    
-    def get_onehots(self, seq):
-            
-            """
-            Returns the one hot encoding for the given sequence
-    
-            Args:
-                seq (str): sequence of interest
-    
-            Returns:
-                onehot (torch.Tensor): tensor containing the one hot encoding of the sequence
-            """
-            
-            onehot = torch.zeros(len(seq), len(self.onehot_alphabet))
-            # Convert the sequence to a list of indices in the alphabet
-            indices = [self.onehot_alphabet.find(char) for char in seq]
-            # Convert the list of indices to a tensor
-            indices_tensor = torch.tensor(indices)
-            # Create a one-hot encoding using the indices tensor
-            onehot = torch.nn.functional.one_hot(indices_tensor, num_classes=len(self.onehot_alphabet)).float()
-            
-            return onehot
 
 ###########################################################
 # Train step
 ###########################################################
-
-def train_step_clan_batch(data_loader,
-               classifier,
-               loss_fn,
-               optimizer,
-               device,
-               data_utils,
-               hmm_dict,
-               l1):
-
-    """
-    Runs a train step for one batch - trains clan prediction head
-
-    Args:
-        data_loader (DataLoader): A data loader object with the current dataset
-        classifier (nn.Module): The classifier head to decode esm embeddings
-        loss_fn (nn.Loss): Loss function for the model
-        optimizer (torch.optim.Optimizer): Optimizer for the classifier
-        device (str): GPU / CPU selection
-        data_utils (DataUtils): Member functions and helpers for processing HMM data
-        hmm_dict (Dict): Dictionary with parsed results of hmmscan for train data
-        l1 (bool): Integer flag to turn on or off the l1 loss
-
-    Returns:
-        epoch_loss (torch.Float32): Batch averaged loss over the entire epoch on this device
-    """
-
-    epoch_loss = torch.tensor(0.).to(device)
-    n_batches = len(data_loader)
-
-    classifier.train()
-    
-    for batch_id, (labels, seqs, tokens) in enumerate(data_loader):
-
-        # if batch_id % 1000 == 0:
-        #     print(f'Rank {device} started batch {batch_id} at {datetime.now()}')
-        #     sys.stdout.flush()
-        tokens = tokens.to(device)
-        embedding = data_utils.get_embedding(tokens)
-
-        optimizer.zero_grad()
-        n_seqs = len(labels)
-
-        sequence_labels = [x.split()[0] for x in labels]
-        stop_indices = [min(len(seq), data_utils.length_limit) for seq in seqs]
-
-        target_vectors = np.zeros((len(sequence_labels), embedding.shape[1]))
-        mask = torch.zeros((embedding.shape[0], embedding.shape[1]))
-
-        if l1: # Store raw vector if L1 loss is computed
-            target_vectors_raw = np.zeros((len(sequence_labels), embedding.shape[1], data_utils.clan_count))
-
-        for idx, label in enumerate(sequence_labels):
-
-            _, clan_vector = hu.generate_domain_position_list(hmm_dict, label, data_utils.maps)
-            
-            if l1: # Store raw vector if L1 loss is computed
-                target_vectors_raw[idx, 1:stop_indices[idx]+1] = clan_vector[:stop_indices[idx]]
-            
-            clan_vector = np.argmax(clan_vector, axis=1)
-        
-            target_vectors[idx, 1:stop_indices[idx]+1] = clan_vector[:stop_indices[idx]]
-            mask[idx, 1:stop_indices[idx]+1] = 1
-        
-        target_vectors = torch.tensor(target_vectors, dtype=torch.long).to(device)
-        mask = mask.to(device)
-        
-        if l1:
-            target_vectors_raw = torch.tensor(target_vectors_raw).to(device)
-
-        preds = classifier(embedding, mask)
-        
-        # loss is averaged over the whole sequence
-        if l1:
-            loss = F.cross_entropy(preds[mask.bool()], target_vectors[mask.bool()]) + \
-                0.05*F.l1_loss(preds[mask.bool()], target_vectors_raw[mask.bool()]) # 0.05 is a hyperparam
-        else:
-            loss = loss_fn(preds[mask.bool()], target_vectors[mask.bool()])
-        
-        loss.backward()
-        optimizer.step()
-
-        epoch_loss += loss.item()
-        
-    return epoch_loss / n_batches
 
 def train_step_batch(data_loader,
                classifier,
@@ -286,7 +212,6 @@ def train_step_batch(data_loader,
                device,
                data_utils,
                hmm_dict,
-               l1,
                fam):
 
     """
@@ -307,77 +232,71 @@ def train_step_batch(data_loader,
         epoch_loss (torch.Float32): Average residue loss over the entire epoch
     """
 
-    epoch_loss = torch.tensor(0.).to(device)
+    epoch_loss = torch.tensor(0., device=device)
     n_batches = len(data_loader)
 
     classifier.train()
-    
-    for batch_id, (labels, seqs, tokens) in enumerate(data_loader):
+
+    # if device == 0:
+    #     profiler = cProfile.Profile()
+    #     profiler.enable()
+
+    for batch_id, (labels, _, tokens) in enumerate(data_loader): # (labels, seqs, tokens)
 
         # if batch_id % 1000 == 0:
         #     print(f'Rank {device} started batch {batch_id} at {datetime.now()}')
         #     sys.stdout.flush()
+
         tokens = tokens.to(device)
         embedding = data_utils.get_embedding(tokens)
 
         optimizer.zero_grad()
 
         sequence_labels = [x.split()[0] for x in labels]
-        stop_indices = [min(len(seq), data_utils.length_limit) for seq in seqs]
 
-        target_vectors = np.zeros((len(sequence_labels), embedding.shape[1]))
-        mask = torch.zeros((embedding.shape[0], embedding.shape[1]))
+        target_vectors = torch.zeros((len(sequence_labels), embedding.shape[1]), dtype=torch.long, device=device)
+        mask = torch.zeros((embedding.shape[0], embedding.shape[1]), device=device, dtype=torch.bool)
         
-        if l1: # Store raw vector if L1 loss is computed
-            target_vectors_raw = np.zeros((len(sequence_labels), embedding.shape[1], data_utils.fam_count))
         if fam:
-            clan_support = np.zeros((len(sequence_labels), embedding.shape[1], data_utils.clan_count))
+            clan_support = torch.zeros((len(sequence_labels), embedding.shape[1]), dtype=torch.long, device=device)
 
         for idx, label in enumerate(sequence_labels):
 
-            fam_vector, clan_vector = hu.generate_domain_position_list(hmm_dict, label, data_utils.maps)
-
+            fam_vector = hmm_dict[label]['fam_vector']
+            clan_vector = hmm_dict[label]['clan_vector']
+            stop_index = hmm_dict[label]['stop']
+            
             if fam:
-                clan_support[idx, 1:stop_indices[idx]+1] = clan_vector[:stop_indices[idx]]
-                if l1: # Store raw vector if L1 loss is computed
-                    target_vectors_raw[idx, 1:stop_indices[idx]+1] = fam_vector[:stop_indices[idx]]
-                fam_vector = np.argmax(fam_vector, axis=1)
-                target_vectors[idx, 1:stop_indices[idx]+1] = fam_vector[:stop_indices[idx]]
+                clan_support[idx, 1:stop_index+1] = clan_vector
+                target_vectors[idx, 1:stop_index+1] = fam_vector
             else:
-                if l1: # Store raw vector if L1 loss is computed
-                    target_vectors_raw[idx, 1:stop_indices[idx]+1] = clan_vector[:stop_indices[idx]]
-                clan_vector = np.argmax(clan_vector, axis=1)
-                target_vectors[idx, 1:stop_indices[idx]+1] = clan_vector[:stop_indices[idx]]
+                target_vectors[idx, 1:stop_index+1] = clan_vector
 
-            mask[idx, 1:stop_indices[idx]+1] = 1
-        
-        target_vectors = torch.tensor(target_vectors, dtype=torch.long).to(device)
-        mask = mask.to(device)
-
-        if l1:
-            target_vectors_raw = torch.tensor(target_vectors_raw).to(device)
+            mask[idx, 1:stop_index+1] = True
 
         if fam:
-            clan_support = torch.tensor(clan_support, dtype=torch.float).to(device)
+            clan_support =  F.one_hot(clan_support, data_utils.clan_count).float()
             preds, _ = classifier(embedding, mask, clan_support)
         else:
             preds = classifier(embedding, mask)
 
         # Average residue loss over all sequences in the batch
-        if l1:
-            loss = F.cross_entropy(preds[mask.bool()], target_vectors[mask.bool()]) + \
-                0.05*F.l1_loss(preds[mask.bool()], target_vectors_raw[mask.bool()]) # 0.05 is a hyperparam
-        else:
-            loss = loss_fn(preds[mask.bool()], target_vectors[mask.bool()]) # Changed from F.cross_entropy()
+
+        loss = loss_fn(preds[mask], target_vectors[mask])
         
         loss.backward()
         optimizer.step()
 
-        epoch_loss += loss.item()
+        # epoch_loss += loss.item()
+        epoch_loss += loss.detach()
 
-        if batch_id %1000 == 0:
-            print(f'Rank {device} finished batch {batch_id} at {datetime.now()}')
-            sys.stdout.flush()
+        # if batch_id == 2000:
+        #     return epoch_loss / n_batches
+
+    # if device == 0:
+    #     profiler.disable()
+    #     stats = pstats.Stats(profiler).sort_stats('ncalls')
+    #     stats.dump_stats('check_clan_ml.prof')
         
     return epoch_loss / n_batches
 
@@ -413,38 +332,38 @@ def validate_batch(data_loader,
 
     with torch.inference_mode():
 
-        validation_loss = torch.tensor(0.).to(device)
+        validation_loss = torch.tensor(0., device=device)
 
-        for batch_id, (labels, seqs, tokens) in enumerate(data_loader):
+        for batch_id, (labels, _, tokens) in enumerate(data_loader):
 
             tokens = tokens.to(device)
             embedding = data_utils.get_embedding(tokens)
 
             sequence_labels = [x.split()[0] for x in labels]
-            stop_indices = [min(len(seq), data_utils.length_limit) for seq in seqs]
 
-            target_vectors = np.zeros((len(sequence_labels), embedding.shape[1]))
-            mask = torch.zeros((embedding.shape[0], embedding.shape[1]))
-            clan_support = np.zeros((len(sequence_labels), embedding.shape[1], data_utils.clan_count)) # Remove hard coding
+            target_vectors = torch.zeros((len(sequence_labels), embedding.shape[1]), dtype=torch.long, device=device)
+            mask = torch.zeros((embedding.shape[0], embedding.shape[1]), device=device)
+
+            if fam:
+                clan_support = torch.zeros((len(sequence_labels), embedding.shape[1]), dtype=torch.long, device=device)
 
             for idx, label in enumerate(sequence_labels):
 
-                if fam:
-                    target, support = hu.generate_domain_position_list(hmm_dict, label, data_utils.maps)
-                    clan_support[idx, 1:stop_indices[idx]+1] = support[:stop_indices[idx]]
-                else:
-                    _, target = hu.generate_domain_position_list(hmm_dict, label, data_utils.maps)
-                
-                target = np.argmax(target, axis=1)
-            
-                target_vectors[idx, 1:stop_indices[idx]+1] = target[:stop_indices[idx]]
-                mask[idx, 1:stop_indices[idx]+1] = 1
-            
-            target_vectors = torch.tensor(target_vectors, dtype=torch.long).to(device)
-            mask = mask.to(device)
-            clan_support = torch.tensor(clan_support, dtype=torch.float).to(device)
+                fam_vector = hmm_dict[label]['fam_vector']
+                clan_vector = hmm_dict[label]['clan_vector']
+                stop_index = hmm_dict[label]['stop']
 
+                if fam:
+                    target = fam_vector
+                    clan_support[idx, 1:stop_index+1] = clan_vector
+                else:
+                    target = clan_vector
+            
+                target_vectors[idx, 1:stop_index+1] = target
+                mask[idx, 1:stop_index+1] = 1
+            
             if fam:
+                clan_support = F.one_hot(clan_support, data_utils.clan_count).float()
                 preds, _ = classifier(embedding, mask, clan_support)
             else:
                 preds = classifier(embedding, mask)

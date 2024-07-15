@@ -4,6 +4,7 @@ def train_parser():
 
     parser = argparse.ArgumentParser(prog='PSALM_train', description='Trains the PSALM Model')
     parser.add_argument('-lr', '--learning_rate', type=float, default=1e-3, help='learning rate')
+    parser.add_argument('-ws', '--warmup_steps', type=int, default=2000, help='number of warmup steps')
     parser.add_argument('-m', '--model', type=str, default='fam', choices=['fam', 'clan'], help='model name - fam/clan')
     parser.add_argument('-r', '--resume', default='none', type=str, help='model path to resume training')
     parser.add_argument('-ne', '--num_epochs', type=int, default=5, help='number of epochs')
