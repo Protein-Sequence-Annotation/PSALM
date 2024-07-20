@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: protein-sequence-annotation
-Version: 1.0.6
+Version: 1.0.7
 Summary: Protein sequence annotation with language models
 Home-page: https://github.com/Protein-Sequence-Annotation/PSALM
 Author: Arpan Sarkar & Kumaresh Krishnan
@@ -16,6 +16,8 @@ Requires-Dist: biopython>=1.83
 
 # PSALM
 This package contains code and pre-trained weights for Protein Sequence Annotation with Language Models (PSALM) from our [2024 preprint](https://www.biorxiv.org/content/10.1101/2024.06.04.596712v1).
+
+**NOTE:** PSALM-1 has not been trained on all Pfam families, as it has been trained and benchmarked on highly-curated datasets with strict sequence similarity guarantees between train and test data. **PSALM-1b (trained on all families in Pfam 35.0) is coming soon**
 
 ## Abstract
 Protein function inference relies on annotating protein domains via sequence similarity, often modeled through profile Hidden Markov Models (profile HMMs), which capture evolutionary diversity within related domains. However, profile HMMs make strong simplifying independence assumptions when modeling residues in a sequence. Here, we introduce PSALM (Protein Sequence Annotation with Language Models), a hierarchical approach that relaxes these assumptions and uses representations of protein sequences learned by protein language models to enable high-sensitivity, high-specificity residue-level protein sequence annotation. We validate PSALM's performance on a curated set of "ground truth" annotations determined by a profile HMM-based method and highlight PSALM as a promising alternative for protein sequence annotation.

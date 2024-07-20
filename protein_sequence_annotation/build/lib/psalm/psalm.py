@@ -234,7 +234,7 @@ class psalm:
         token_representations = token_representations.squeeze()
         return token_representations
     
-    def plot_sequences(self, seq_list,threshold,save_path):
+    def plot_sequences(self, seq_list,threshold,save_path,verbose):
         """
         Process a list of protein sequences.
 
@@ -261,9 +261,15 @@ class psalm:
             # Visualize the predictions
             clan_preds = clan_preds.detach().cpu()
             fam_preds = fam_preds.detach().cpu()
+            if verbose and save_path is not None:
+                # Save clan and fam preds
+                with open(save_path + seq_name + "_clan_preds.pkl", "wb") as f:
+                    pickle.dump(clan_preds, f)
+                with open(save_path + seq_name + "_fam_preds.pkl", "wb") as f:
+                    pickle.dump(fam_preds, f)
             plot_predictions(fam_preds, clan_preds, self.fam_maps, threshold, seq_name,save_path=save_path)
 
-    def annotate(self, seq_list, threshold=0.72,save_path=None):
+    def annotate(self, seq_list, threshold=0.72,save_path=None,verbose=False):
         """
         Annotates protein sequences using PSALM.
 
@@ -283,9 +289,9 @@ class psalm:
         long_seq_list = []
         seq_list = [seq_tup for seq_tup in seq_list if len(seq_tup[1]) <= 4096 or long_seq_list.append(seq_tup)]
 
-        self.plot_sequences(seq_list,threshold,save_path)
+        self.plot_sequences(seq_list,threshold,save_path,verbose)
 
         if long_seq_list:
             warnings.warn("PSALM annotations may be unreliable for sequence lengths greater than 4096.")
-            self.plot_sequences(long_seq_list,threshold,save_path)
+            self.plot_sequences(long_seq_list,threshold,save_path,verbose)
     
