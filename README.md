@@ -1,11 +1,3 @@
----
-title: README
-emoji: 🔥
-colorFrom: red
-colorTo: gray
-sdk: docker
-pinned: true
----
 **NOTE:** We encourage you to use the PSALM-1b-clan and PSALM-1b-family models, as they are trained on the entirety of Pfam-A Seed 35.0 and can predict across all 19,632 Pfam families and all 655 Pfam clans in Pfam 35.0.
 
 # PSALM
