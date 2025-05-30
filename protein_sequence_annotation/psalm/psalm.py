@@ -8,6 +8,7 @@ import esm
 from Bio import SeqIO
 import pickle
 import json
+import numpy as np
 from huggingface_hub import PyTorchModelHubMixin, hf_hub_download
 import safetensors
 from .viz_utils import plot_predictions
@@ -182,6 +183,7 @@ class psalm:
 
     Methods:
     - annotate(seq_list, batch_size=16, threshold=0.72, save_path=None, verbose=False): Annotates protein sequences using the PSALM algorithm.
+    - predict(seq_list, batch_size=16): Generate predictions for protein sequences without visualization.
     """
 
     def __init__(self, clan_model_name, fam_model_name, device='cpu'):
@@ -247,6 +249,116 @@ class psalm:
             batch_seqs = seq_list[batch_idx * batch_size : (batch_idx + 1) * batch_size]
             # Process batch
             self._process_batch(batch_seqs, threshold, save_path, verbose)
+
+    def predict(self, seq_list, batch_size=16):
+        """
+        Generate predictions for protein sequences using PSALM without visualization.
+
+        Parameters:
+        - seq_list (list): A list of tuples, where each tuple contains the sequence name and sequence.
+        - batch_size (int, optional): The batch size for processing sequences. Default is 16.
+
+        Returns:
+        dict: A dictionary where keys are sequence names and values are prediction dictionaries.
+              Each prediction dictionary contains 'clan' and 'family' keys, each with 'labels' and 'probs' arrays.
+        """
+        predictions = {}
+        
+        # Split sequences into batches
+        num_batches = (len(seq_list) + batch_size - 1) // batch_size
+        for batch_idx in range(num_batches):
+            batch_seqs = seq_list[batch_idx * batch_size : (batch_idx + 1) * batch_size]
+            # Process batch and collect predictions
+            batch_predictions = self._predict_batch(batch_seqs)
+            predictions.update(batch_predictions)
+        
+        return predictions
+
+    def _predict_batch(self, seq_list):
+        """
+        Process a batch of sequences and return predictions.
+
+        Args:
+            seq_list (list): A list of tuples containing sequence names and sequences.
+
+        Returns:
+            dict: A dictionary with sequence names as keys and prediction dictionaries as values.
+        """
+        # Convert sequences to tokens
+        labels, strs, tokens = self.batch_converter(seq_list)
+        tokens = tokens.to(self.device)
+        
+        batch_predictions = {}
+        
+        with torch.no_grad():
+            # Get embeddings
+            results = self.esm_model(tokens, repr_layers=[33], return_contacts=False)
+            token_representations = results["representations"][33]
+            # Create mask
+            batch_size, seq_len, _ = token_representations.size()
+            mask = tokens != self.alphabet.padding_idx
+            mask = mask[:, 1:-1]  # Remove start + end tokens
+            mask = mask.to(self.device)
+            # Remove start and end tokens from embeddings
+            token_representations = token_representations[:, 1:-1, :]
+            # Run clan model
+            clan_logits = self.clan_model(token_representations, mask)
+            # Apply softmax to clan predictions
+            clan_preds = F.softmax(clan_logits, dim=2)
+            # Run fam model
+            fam_preds, fam_logits = self.fam_model(token_representations, mask, clan_preds)
+            # Clan-based normalization
+            for i in range(self.clan_fam_matrix.shape[0]):  # shape is cxf
+                indices = torch.nonzero(self.clan_fam_matrix[i]).squeeze()
+                if i == self.clan_fam_matrix.shape[0] - 1:
+                    fam_preds[:, :, indices] = 1  # IDR is 1:1 map
+                else:
+                    fam_preds[:, :, indices] = F.softmax(fam_preds[:, :, indices], dim=2)
+            # Multiply by clan, expand clan preds
+            clan_preds_f = torch.matmul(clan_preds, self.clan_fam_matrix)
+            fam_preds = fam_preds * clan_preds_f
+            
+            # Extract predictions for each sequence
+            for i, label in enumerate(labels):
+                seq_name = label.split()[0]
+                seq_len = len(seq_list[i][1])
+                seq_clan_preds = clan_preds[i, :seq_len, :].detach().cpu()
+                seq_fam_preds = fam_preds[i, :seq_len, :].detach().cpu()
+                
+                # Convert predictions to the expected format
+                clan_probs = seq_clan_preds.numpy()
+                fam_probs = seq_fam_preds.numpy()
+                
+                # Get clan labels for each position
+                clan_labels = []
+                for pos in range(seq_len):
+                    max_idx = torch.argmax(seq_clan_preds[pos]).item()
+                    if max_idx in self.fam_maps['idx_clan']:
+                        clan_labels.append(self.fam_maps['idx_clan'][max_idx])
+                    else:
+                        clan_labels.append(f"clan_{max_idx}")
+                
+                # Get family labels for each position
+                fam_labels = []
+                for pos in range(seq_len):
+                    max_idx = torch.argmax(seq_fam_preds[pos]).item()
+                    if max_idx in self.fam_maps['idx_fam']:
+                        fam_labels.append(self.fam_maps['idx_fam'][max_idx])
+                    else:
+                        fam_labels.append(f"fam_{max_idx}")
+                
+                batch_predictions[seq_name] = {
+                    'clan': {
+                        'labels': clan_labels,
+                        'probs': clan_probs
+                    },
+                    'family': {
+                        'labels': fam_labels,
+                        'probs': fam_probs
+                    }
+                }
+        
+        return batch_predictions
 
     def _process_batch(self, seq_list, threshold, save_path, verbose):
         """
