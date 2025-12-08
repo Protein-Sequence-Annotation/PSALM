@@ -43,7 +43,10 @@ class psalm_clan(nn.Module, PyTorchModelHubMixin):
         )
 
     def forward(self, x, mask):
-        x, _ = self.lstm(x)
+        lengths = mask.sum(dim=1).to('cpu').long()
+        packed = nn.utils.rnn.pack_padded_sequence(x, lengths, batch_first=True, enforce_sorted=False)
+        packed_out, _ = self.lstm(packed)
+        x, _ = nn.utils.rnn.pad_packed_sequence(packed_out, batch_first=True, total_length=x.size(1))
         x = x * mask.unsqueeze(2)
         x = self.linear_stack(x)
         return x
@@ -118,7 +121,10 @@ class psalm_fam(nn.Module, PyTorchModelHubMixin):
         weights = torch.matmul(x_c, self.clan_fam_matrix)
 
         # Get fam logits
-        x, _ = self.lstm(x)
+        lengths = mask.sum(dim=1).to('cpu').long()
+        packed = nn.utils.rnn.pack_padded_sequence(x, lengths, batch_first=True, enforce_sorted=False)
+        packed_out, _ = self.lstm(packed)
+        x, _ = nn.utils.rnn.pad_packed_sequence(packed_out, batch_first=True, total_length=x.size(1))
         x = x * mask.unsqueeze(2)
         x = self.linear_stack(x)
 
@@ -321,7 +327,7 @@ class psalm:
             # Extract predictions for each sequence
             for i, label in enumerate(labels):
                 seq_name = label.split()[0]
-                seq_len = len(seq_list[i][1])
+                seq_len = int(mask[i].sum().item())
                 seq_clan_preds = clan_preds[i, :seq_len, :].detach().cpu()
                 seq_fam_preds = fam_preds[i, :seq_len, :].detach().cpu()
                 
@@ -406,7 +412,7 @@ class psalm:
             # Process and visualize predictions
             for i, label in enumerate(labels):
                 seq_name = label.split()[0]
-                seq_len = len(seq_list[i][1])
+                seq_len = int(mask[i].sum().item())
                 seq_clan_preds = clan_preds[i, :seq_len, :].detach().cpu()
                 seq_fam_preds = fam_preds[i, :seq_len, :].detach().cpu()
                 if verbose and save_path is not None:

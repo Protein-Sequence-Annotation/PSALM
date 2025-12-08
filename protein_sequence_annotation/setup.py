@@ -4,8 +4,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name='protein-sequence-annotation',
-    version='1.1.0',
+    name='protein_sequence_annotation',
+    version='1.1.3',
     description='Protein sequence annotation with language models',
     long_description=long_description,
     long_description_content_type="text/markdown",
