@@ -1,2 +1,0 @@
-**NOTE**: We are currently in the process of significantly revamping PSALM. This repository will always contain the most up-to-date version of PSALM. Since this is a significant change, the original PSALM code corresponding to the [2024 preprint](https://www.biorxiv.org/content/10.1101/2024.06.04.596712v2) can be found here in this [repository](https://github.com/Protein-Sequence-Annotation/PSALM-copy).
----
