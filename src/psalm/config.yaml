@@ -1,0 +1,45 @@
+model:
+  model_name: null
+  max_position_embeddings: null
+  max_batch_size: null
+  output_size: null
+  freeze_esm: null
+  use_fa: null
+  pretrained_checkpoint_path: null
+  label_mapping_path: null
+
+training:
+  gradient_accumulation_steps: null
+  learning_rate:
+    esm: null
+    classifier: null
+  optimizer:
+    esm:
+      beta_1: null
+      beta_2: null
+      epsilon: null
+      weight_decay: null
+    classifier:
+      beta_1: null
+      beta_2: null
+      epsilon: null
+      weight_decay: null
+  gradient_clipping: null
+  lr_scheduler: null
+  eval_strategy: null
+  eval_steps: null
+  total_steps: null
+  warmup_steps: null
+  logging_steps: null
+  save_steps: null
+  output_dir: null
+  mixed_precision: null
+  dataloader_num_workers: null
+  dataloader_prefetch_factor: null
+  dataloader_pin_memory: null
+  seed: null
+
+data:
+  chunk_size: null
+  default_tmp_dir: null
+  default_shard_size: null
