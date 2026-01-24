@@ -46,7 +46,6 @@ def get_model_config():
         "use_fa",
         "output_size",
         "max_batch_size",
-        "max_position_embeddings",
         "label_mapping_path",
     }
 

@@ -3,6 +3,33 @@ This repository is under active refactor. For the previous stable codebase, see
 https://github.com/Protein-Sequence-Annotation/PSALM-copy and release 1.13 or
 previous.
 
+## Installation
+Coming soon!
+
+
+## Example usage
+```python
+from psalm.psalm_model import PSALM
+
+# Load the model from HuggingFace
+psalm = PSALM(model_name="ProteinSequenceAnnotation/PSALM-2-InterPro30-104.0")
+
+# Scan from FASTA
+results = psalm.scan(fasta="path/to/your_sequence.fasta")
+print(results)
+# {seq_id: [(pfam, start, stop, cbm_score, bit_score, len_ratio, bias, status), ...]}
+
+# Or scan from a raw sequence string
+seq = "MSTNPKPQR...AA"
+results = psalm.scan(sequence=seq)
+```
+
+Notes:git st
+- For full usage (local bundles, HF download, verbose output), see `tutorial.ipynb`.
+- `Score` in the output table is the CBM score (sorting/filtering).
+- `Bit score` is the PF-LLD score (raw bit score from decoding).
+- Optional knobs: `use_fa`, `beam_size`, `refine_extended`, `score_thresh`, `verbose`.
+
 ## Scripts overview
 The core workflow is:
 1) `augment_fasta.py` → slice sequences and generate augmented FASTA + domain dict
@@ -73,7 +100,6 @@ The scripts expect a YAML config with these sections:
 
 **`model`**
 - `model_name`
-- `max_position_embeddings`
 - `max_batch_size`
 - `output_size`
 - `freeze_esm`

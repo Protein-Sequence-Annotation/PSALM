@@ -1,6 +1,5 @@
 model:
   model_name: null
-  max_position_embeddings: null
   max_batch_size: null
   output_size: null
   freeze_esm: null
