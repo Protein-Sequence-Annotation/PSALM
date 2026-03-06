@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import os
+import sys
 import time
 import warnings
+from importlib.metadata import PackageNotFoundError, version as pkg_version
 from datetime import datetime
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -21,9 +25,7 @@ from psalm.inference.cbm_score import add_cbm_scores
 from psalm.inference.decoder import annotate_domains
 
 
-def _resolve_device(device: Optional[str]) -> torch.device:
-    if device is not None:
-        return torch.device(device)
+def _auto_device() -> torch.device:
     if torch.cuda.is_available():
         return torch.device("cuda")
     if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
@@ -31,14 +33,44 @@ def _resolve_device(device: Optional[str]) -> torch.device:
     return torch.device("cpu")
 
 
-def _resolve_model_dir(model_name: str) -> Path:
+def _resolve_device(device: Optional[str]) -> torch.device:
+    if device is None or str(device).strip().lower() == "auto":
+        return _auto_device()
+
+    try:
+        requested = torch.device(str(device).strip().lower())
+    except Exception as exc:
+        raise ValueError(
+            f"Invalid device '{device}'. Use one of: auto, cpu, mps, cuda, cuda:<index>."
+        ) from exc
+
+    if requested.type == "cuda" and not torch.cuda.is_available():
+        fallback = _auto_device()
+        warnings.warn(
+            f"Requested device '{device}' is unavailable; falling back to '{fallback.type}'."
+        )
+        return fallback
+
+    if requested.type == "mps":
+        mps_ok = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+        if not mps_ok:
+            fallback = _auto_device()
+            warnings.warn(
+                f"Requested device '{device}' is unavailable; falling back to '{fallback.type}'."
+            )
+            return fallback
+
+    return requested
+
+
+def _resolve_model_dir_with_source(model_name: str) -> Tuple[Path, str]:
     candidate = Path(model_name).expanduser()
     if candidate.exists():
-        return candidate.resolve()
+        return candidate.resolve(), "local_path"
     repo_root = Path(__file__).resolve().parents[2]
     local_candidate = repo_root / "models" / model_name
     if local_candidate.exists():
-        return local_candidate.resolve()
+        return local_candidate.resolve(), "repo_models_dir"
     try:
         from huggingface_hub import snapshot_download
     except ImportError as exc:
@@ -59,16 +91,42 @@ def _resolve_model_dir(model_name: str) -> Path:
         "vocab.txt",
         "tokenizer.json",
     ]
-    cache_dir = snapshot_download(
-        repo_id=model_name,
-        allow_patterns=allow_patterns,
-    )
-    return Path(cache_dir)
+    try:
+        cache_dir = snapshot_download(
+            repo_id=model_name,
+            allow_patterns=allow_patterns,
+            local_files_only=True,
+        )
+        return Path(cache_dir), "hf_cache"
+    except Exception:
+        cache_dir = snapshot_download(
+            repo_id=model_name,
+            allow_patterns=allow_patterns,
+        )
+        return Path(cache_dir), "hf_download"
+
+
+def _resolve_model_dir(model_name: str) -> Path:
+    path, _ = _resolve_model_dir_with_source(model_name)
+    return path
 
 
 def _load_json(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
+
+
+class _TeeIO:
+    def __init__(self, *streams):
+        self.streams = streams
+
+    def write(self, data: str) -> None:
+        for stream in self.streams:
+            stream.write(data)
+
+    def flush(self) -> None:
+        for stream in self.streams:
+            stream.flush()
 
 
 def _load_label_mapping(model_dir: Path) -> dict:
@@ -118,6 +176,39 @@ def _load_state_dict(model_dir: Path) -> dict:
         except TypeError:
             return torch.load(bin_path, map_location="cpu")
     raise FileNotFoundError("model.safetensors or model.bin not found in model bundle.")
+
+
+def _load_model_state_with_fallback(model: nn.Module, state_dict: dict, context: str) -> None:
+    try:
+        model.load_state_dict(state_dict)
+        return
+    except RuntimeError as err:
+        msg = str(err)
+        known_key = "esm_model.embeddings.position_embeddings.weight"
+        if known_key not in msg:
+            raise
+
+    incompatible = model.load_state_dict(state_dict, strict=False)
+    dropped = [k for k in incompatible.unexpected_keys if k == known_key]
+    remaining_unexpected = [k for k in incompatible.unexpected_keys if k != known_key]
+    if remaining_unexpected:
+        raise RuntimeError(
+            f"{context}: unexpected checkpoint keys remain after fallback: {remaining_unexpected}"
+        )
+    if incompatible.missing_keys:
+        warnings.warn(
+            f"{context}: missing keys during fallback load: {incompatible.missing_keys}"
+        )
+    # Intentionally suppress the known dropped-key warning by default
+    # to keep CLI startup output clean.
+    _ = dropped
+
+
+def _get_psalm_version() -> str:
+    try:
+        return pkg_version("protein-sequence-annotation")
+    except PackageNotFoundError:
+        return "0+local"
 
 
 def _load_cbm_model(model_dir: Path):
@@ -230,13 +321,19 @@ class PSALM(nn.Module):
         ignore_label: int = -100,
         device: Optional[str] = None,
         use_fa: Optional[bool] = None,
+        warmup: Optional[bool] = None,
+        status_callback: Optional[Callable[[str], None]] = None,
     ):
         super().__init__()
         self.model_name = model_name
         self.ignore_label = ignore_label
         self.model_dir: Optional[Path] = None
+        self.model_source: Optional[str] = None
         self.cbm_model = None
         self.use_fa = False
+        self.warmup_executed = False
+        self.resolved_device: Optional[torch.device] = None
+        self.status_callback = status_callback
 
         if model_name is None:
             cfg = get_model_config()
@@ -246,6 +343,7 @@ class PSALM(nn.Module):
                 esm_cfg.max_position_embeddings = cfg.max_position_embeddings
             use_fa_cfg = bool(getattr(cfg, "use_fa", False))
             device_obj = _resolve_device(device)
+            self.resolved_device = device_obj
             self.use_fa = _resolve_use_fa(use_fa_cfg, device_obj)
             if self.use_fa:
                 from faesm.esm import FAEsmModel
@@ -261,8 +359,11 @@ class PSALM(nn.Module):
             self.tokenizer = AutoTokenizer.from_pretrained(model_name_cfg)
             families = cfg.output_size
         else:
-            self.model_dir = _resolve_model_dir(model_name)
+            self.model_dir, self.model_source = _resolve_model_dir_with_source(model_name)
+            if self.status_callback is not None:
+                self.status_callback("Model source resolved.")
             device_obj = _resolve_device(device)
+            self.resolved_device = device_obj
             esm_cfg = AutoConfig.from_pretrained(
                 str(self.model_dir), local_files_only=True
             )
@@ -316,7 +417,7 @@ class PSALM(nn.Module):
             print(f"Trainable parameters: ESM = {esm_params:,}, Classifier = {classifier_params:,}")
         else:
             state_dict = _load_state_dict(self.model_dir)
-            self.load_state_dict(state_dict)
+            _load_model_state_with_fallback(self, state_dict, context="inference bundle")
             resources = _build_decoder_resources(
                 label_mapping, _load_transitions(self.model_dir)
             )
@@ -332,7 +433,15 @@ class PSALM(nn.Module):
             self.state_role_ids_full = resources["state_role_ids_full"]
             self.cbm_model = _load_cbm_model(self.model_dir)
             self.to(device_obj)
-            self._warmup()
+            if warmup is None:
+                warmup = True
+            if warmup:
+                if self.status_callback is not None:
+                    self.status_callback("Warmup started.")
+                self._warmup()
+                self.warmup_executed = True
+                if self.status_callback is not None:
+                    self.status_callback("Warmup finished.")
 
     def forward(self, input_ids, attention_mask=None, labels=None, **kwargs):
         if attention_mask is not None:
@@ -376,7 +485,7 @@ class PSALM(nn.Module):
                 state_dict = torch.load(weights_path, map_location="cpu", weights_only=True)
             except TypeError:
                 state_dict = torch.load(weights_path, map_location="cpu")
-        model.load_state_dict(state_dict)
+        _load_model_state_with_fallback(model, state_dict, context="checkpoint load")
 
         device_obj = _resolve_device(device)
         model = model.to(device_obj)
@@ -584,18 +693,27 @@ class PSALM(nn.Module):
         if print_output:
             model_label = self.model_name or getattr(self.esm_model.config, "name_or_path", "training")
             device_label = str(next(self.parameters()).device)
+            psalm_ver = _get_psalm_version()
             stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print("#" * 80)
-            print(f"# date/time: {stamp}")
-            print(f"# model: {model_label}")
-            print(f"# device: {device_label}")
-            print(f"# refine_extended: {refine_extended}")
-            print(f"# beam size: {beam_size}")
-            print(f"# embedding time: {inf_dt*1000:.2f}ms")
-            print(f"# decoding time: {dec_dt*1000:.2f}ms")
-            print(f"# top-1 emission filter: {K}/{total_fams} families passed")
-            print(f"# score filter ≥{score_thresh:.2f}: {passed}/{total_domains} domains passed")
-            print("#" * 80)
+            rows = [
+                ("PSALM", psalm_ver),
+                ("Date/time", stamp),
+                ("Model", model_label),
+                ("Device", device_label),
+                ("Refinement", "On" if refine_extended else "Off"),
+                ("Beam size", str(beam_size)),
+                ("Embedding time", f"{inf_dt*1000:.2f} ms"),
+                ("Decoding time", f"{dec_dt*1000:.2f} ms"),
+                ("Family filter", f"{K}/{total_fams} families passed"),
+                ("Score filter", f">={score_thresh:.2f}: {passed}/{total_domains} domains passed"),
+            ]
+            key_w = max(len(k) for k, _ in rows)
+            val_w = max(len(v) for _, v in rows)
+            border = "+" + "-" * (key_w + 2) + "+" + "-" * (val_w + 2) + "+"
+            print(border)
+            for k, v in rows:
+                print(f"| {k:<{key_w}} | {v:<{val_w}} |")
+            print(border)
             print(f">>> Query: {seq_id} ({len(sequence)} aa)")
 
             sorted_domains = sorted(domains_scored, key=lambda x: x[3], reverse=True)
@@ -771,6 +889,7 @@ class PSALM(nn.Module):
         T: float = 1.0,
         refine_extended: bool = True,
         to_tsv: str = None,
+        to_txt: str = None,
         verbose: bool = False,
         _seq_id: Optional[str] = None,
         _print_output: bool = True,
@@ -789,56 +908,81 @@ class PSALM(nn.Module):
             T: Temperature scaling factor for logits (1.0 = no scaling)
             refine_extended: Run extended refinement for long domains
             to_tsv: Path to save results as TSV (optional)
+            to_txt: Path to save printed output as text (optional)
             verbose: If True, print detailed results and alignments
 
         Returns:
             Dict mapping seq_id -> list of domain tuples:
               (pfam, start, stop, cbm_score, bit_score, len_ratio, bias, status)
         """
+        def _normalize_path(path: Optional[str], default_ext: str) -> Optional[str]:
+            if path is None:
+                return None
+            base, ext = os.path.splitext(path)
+            return path if ext else f"{base}{default_ext}"
+
+        txt_path = _normalize_path(to_txt, ".txt")
+        emit_console = bool(_print_output)
+        emit_text_file = bool(txt_path)
+        emit_printable = emit_console or emit_text_file
+
         if _seq_id is None and fasta is not None:
             records = list(SeqIO.parse(fasta, "fasta"))
             if len(records) > 1:
                 results: Dict[str, List[Tuple[str, int, int, float, float, float, float, str]]] = {}
                 used_ids: Dict[str, int] = {}
                 unnamed = 0
-                for rec in records:
-                    rec_id = (rec.id or "").strip()
-                    if rec_id == "":
-                        unnamed += 1
-                        rec_id = f"seq{unnamed}"
-                    if rec_id in used_ids:
-                        used_ids[rec_id] += 1
-                        rec_id = f"{rec_id}_{used_ids[rec_id]}"
-                    else:
-                        used_ids[rec_id] = 1
-                    sub = self.scan(
-                        sequence=str(rec.seq),
-                        score_thresh=score_thresh,
-                        beam_size=beam_size,
-                        prior_mid_to_start=prior_mid_to_start,
-                        prior_stop_to_mid=prior_stop_to_mid,
-                        prior_stop_to_start=prior_stop_to_start,
-                        T=T,
-                        refine_extended=refine_extended,
-                        to_tsv=None,
-                        verbose=verbose,
-                        _seq_id=rec_id,
-                        _print_output=_print_output,
-                    )
-                    results.update(sub)
-                    if _print_output:
-                        print()
-                if to_tsv:
-                    for seq_id, domains in results.items():
-                        if not domains:
-                            continue
-                        df = pd.DataFrame(
-                            domains,
-                            columns=["pfam", "start", "stop", "score", "bit_score", "len_ratio", "bias", "status"],
+                buffer = None
+                output_context = contextlib.nullcontext()
+                if emit_text_file and emit_console:
+                    buffer = io.StringIO()
+                    tee = _TeeIO(sys.stdout, buffer)
+                    output_context = contextlib.redirect_stdout(tee)
+                elif emit_text_file and not emit_console:
+                    buffer = io.StringIO()
+                    output_context = contextlib.redirect_stdout(buffer)
+                with output_context:
+                    for rec in records:
+                        rec_id = (rec.id or "").strip()
+                        if rec_id == "":
+                            unnamed += 1
+                            rec_id = f"seq{unnamed}"
+                        if rec_id in used_ids:
+                            used_ids[rec_id] += 1
+                            rec_id = f"{rec_id}_{used_ids[rec_id]}"
+                        else:
+                            used_ids[rec_id] = 1
+                        sub = self.scan(
+                            sequence=str(rec.seq),
+                            score_thresh=score_thresh,
+                            beam_size=beam_size,
+                            prior_mid_to_start=prior_mid_to_start,
+                            prior_stop_to_mid=prior_stop_to_mid,
+                            prior_stop_to_start=prior_stop_to_start,
+                            T=T,
+                            refine_extended=refine_extended,
+                            to_tsv=None,
+                            to_txt=None,
+                            verbose=verbose,
+                            _seq_id=rec_id,
+                            _print_output=emit_printable,
                         )
-                        base, ext = os.path.splitext(to_tsv)
-                        out_path = f"{base}_{seq_id}{ext or '.tsv'}"
-                        df.to_csv(out_path, sep="\t", index=False)
+                        results.update(sub)
+                        if emit_printable:
+                            print()
+                if emit_text_file and buffer is not None:
+                    with open(txt_path, "w", encoding="utf-8") as handle:
+                        handle.write(buffer.getvalue())
+                if to_tsv:
+                    rows = []
+                    for seq_id, domains in results.items():
+                        for domain in domains:
+                            rows.append((seq_id, *domain))
+                    df = pd.DataFrame(
+                        rows,
+                        columns=["seq_id", "pfam", "start", "stop", "score", "bit_score", "len_ratio", "bias", "status"],
+                    )
+                    df.to_csv(to_tsv, sep="\t", index=False)
                 return results
 
         if fasta is not None:
@@ -854,25 +998,64 @@ class PSALM(nn.Module):
 
         if sequence is None:
             raise ValueError("Provide either sequence or fasta.")
-        domains_scored = self._scan_one(
-            sequence=sequence,
-            seq_id=seq_id,
-            score_thresh=score_thresh,
-            beam_size=beam_size,
-            prior_mid_to_start=prior_mid_to_start,
-            prior_stop_to_mid=prior_stop_to_mid,
-            prior_stop_to_start=prior_stop_to_start,
-            T=T,
-            refine_extended=refine_extended,
-            verbose=verbose,
-            print_output=_print_output,
-        )
+        if emit_text_file and emit_console:
+            buffer = io.StringIO()
+            tee = _TeeIO(sys.stdout, buffer)
+            with contextlib.redirect_stdout(tee):
+                domains_scored = self._scan_one(
+                    sequence=sequence,
+                    seq_id=seq_id,
+                    score_thresh=score_thresh,
+                    beam_size=beam_size,
+                    prior_mid_to_start=prior_mid_to_start,
+                    prior_stop_to_mid=prior_stop_to_mid,
+                    prior_stop_to_start=prior_stop_to_start,
+                    T=T,
+                    refine_extended=refine_extended,
+                    verbose=verbose,
+                    print_output=emit_printable,
+                )
+            with open(txt_path, "w", encoding="utf-8") as handle:
+                handle.write(buffer.getvalue())
+        elif emit_text_file and not emit_console:
+            buffer = io.StringIO()
+            with contextlib.redirect_stdout(buffer):
+                domains_scored = self._scan_one(
+                    sequence=sequence,
+                    seq_id=seq_id,
+                    score_thresh=score_thresh,
+                    beam_size=beam_size,
+                    prior_mid_to_start=prior_mid_to_start,
+                    prior_stop_to_mid=prior_stop_to_mid,
+                    prior_stop_to_start=prior_stop_to_start,
+                    T=T,
+                    refine_extended=refine_extended,
+                    verbose=verbose,
+                    print_output=emit_printable,
+                )
+            with open(txt_path, "w", encoding="utf-8") as handle:
+                handle.write(buffer.getvalue())
+        else:
+            domains_scored = self._scan_one(
+                sequence=sequence,
+                seq_id=seq_id,
+                score_thresh=score_thresh,
+                beam_size=beam_size,
+                prior_mid_to_start=prior_mid_to_start,
+                prior_stop_to_mid=prior_stop_to_mid,
+                prior_stop_to_start=prior_stop_to_start,
+                T=T,
+                refine_extended=refine_extended,
+                verbose=verbose,
+                print_output=emit_printable,
+            )
 
         if to_tsv:
             df = pd.DataFrame(
                 domains_scored,
                 columns=["pfam", "start", "stop", "score", "bit_score", "len_ratio", "bias", "status"],
             )
+            df.insert(0, "seq_id", seq_id)
             df.to_csv(to_tsv, sep="\t", index=False)
 
         return {seq_id: domains_scored}

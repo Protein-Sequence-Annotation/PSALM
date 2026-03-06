@@ -3,37 +3,105 @@ This repository is under active refactor. For the previous stable codebase, see
 https://github.com/Protein-Sequence-Annotation/PSALM-copy and release 1.13 or
 previous.
 
+
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                              │
+│                                                                              │
+│                 ██████╗ ███████╗ █████╗ ██╗     ███╗   ███╗                  │
+│                 ██╔══██╗██╔════╝██╔══██╗██║     ████╗ ████║                  │
+│                 ██████╔╝███████╗███████║██║     ██╔████╔██║                  │
+│                 ██╔═══╝ ╚════██║██╔══██║██║     ██║╚██╔╝██║                  │
+│                 ██║     ███████║██║  ██║███████╗██║ ╚═╝ ██║                  │
+│                 ╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝                  │
+│              Protein Sequence Annotation using a Language Model              │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+                               PSALM CLI (v2.0.7)
+```
+## CLI (Recommended)
+Quick usage:
+```
+psalm-scan -f path/to/your_sequence.fasta
+psalm-scan -v -f path/to/your_sequence.fasta --to-tsv results.tsv
+psalm-scan --no-refine -f path/to/your_sequence.fasta
+```
+
+Persistent session mode (load model once, scan many times):
+```
+psalm-shell -d auto
+# inside shell:
+#   scan -f path/to/seqs.fa -v
+#   scan -s "MSTNPKPQR..." --no-refine
+#   quit
+```
+
+CLI behavior notes:
+- Default model: `ProteinSequenceAnnotation/PSALM-2-InterPro30-104.0`
+- Default device: `auto` (`cuda` -> `mps` -> `cpu`)
+- `--quiet` suppresses scan result output only; startup/status still prints
+- `--to-tsv` and `--to-txt` work for single or multi-sequence FASTA
+- `-v/--verbose` enables detailed alignment and model tables
+- Model lookup order:
+  1) explicit local path
+  2) `models/<model_name>` under repository
+  3) Hugging Face cache
+  4) Hugging Face download (first run)
+
 ## Installation
-Coming soon!
 
+### Conda environments (local development)
+No CUDA:
+```
+conda env create -f psalm2.yml
+conda activate psalm2
+```
 
-## Example usage
+CUDA (NVIDIA GPU):
+```
+conda env create -f psalm2-cuda.yml
+conda activate psalm2-cuda
+```
+
+### Install from latest TestPyPI build
+```
+python -m pip install --index-url https://test.pypi.org/simple/ \
+  --extra-index-url https://pypi.org/simple \
+  protein-sequence-annotation==2.0.7
+```
+
+Optional: run without activating conda manually:
+```
+conda run -n psalm2 psalm-scan -f path/to/seqs.fa
+```
+
+## Python API
+The Python API remains fully supported.
+
 ```python
 from psalm.psalm_model import PSALM
 
-# Load the model from HuggingFace
 psalm = PSALM(model_name="ProteinSequenceAnnotation/PSALM-2-InterPro30-104.0")
 
-# Scan from FASTA
+# Scan FASTA
 results = psalm.scan(fasta="path/to/your_sequence.fasta")
 print(results)
-# {seq_id: [(pfam, start, stop, cbm_score, bit_score, len_ratio, bias, status), ...]}
 
-# Or scan from a raw sequence string
-seq = "MSTNPKPQR...AA"
-results = psalm.scan(sequence=seq)
+# Scan sequence string
+results = psalm.scan(sequence="MSTNPKPQR...AA")
 ```
 
-Notes:git st
-- For full usage (local bundles, HF download, verbose output), see `tutorial.ipynb`.
-- `Score` in the output table is the CBM score (sorting/filtering).
-- `Bit score` is the PF-LLD score (raw bit score from decoding).
-- Optional knobs: `use_fa`, `beam_size`, `refine_extended`, `score_thresh`, `verbose`.
+Output options:
+- `to_tsv="results.tsv"` writes:
+  `seq_id,pfam,start,stop,score,bit_score,len_ratio,bias,status`
+- `to_txt="results.txt"` saves console-style output
+- For multi-sequence FASTA, outputs are combined with `seq_id` tags
 
 ## Scripts overview
 The core workflow is:
-1) `augment_fasta.py` → slice sequences and generate augmented FASTA + domain dict
-2) `data_processing.py` → tokenize, label, batch, and shard datasets
+1) `scripts/data/augment_fasta.py` → slice sequences and generate augmented FASTA + domain dict
+2) `scripts/data/data_processing.py` → tokenize, label, batch, and shard datasets
 3) `scripts/train/train_psalm.py` → train/evaluate the PSALM model on shards
 
 ### `scripts/data/augment_fasta.py`
@@ -95,6 +163,23 @@ Trains or evaluates PSALM on preprocessed shard datasets.
 **Logging**
 - `report_to=["wandb"]` is enabled by default.
 
+### `scripts/train/train_cbm.py`
+Trains the CatBoost scoring model used by `scan()` (saved as `score.cbm`).
+
+**Required args**
+- `--pos`, `--neg`: Pickle or JSON files containing a list of 7-tuples:
+  `(pfam, start, stop, bit_score, len_ratio, bias, status)`
+  (or `scan()` output dicts containing 8-tuples with `cbm_score`).
+
+**Example**
+```
+python scripts/train/train_cbm.py \
+  --pos path/to/positives.pkl \
+  --neg path/to/negatives.pkl \
+  --outdir cbm_outputs \
+  --model-out score.cbm
+```
+
 ## Config format
 The scripts expect a YAML config with these sections:
 
@@ -120,7 +205,7 @@ The scripts expect a YAML config with these sections:
 `src/psalm/config.yaml` is provided as a template with `null` values. Populate it
 before use, or pass all required values via CLI without `--config`.
 
-## Example usage
+## Training CLI examples
 ```
 python scripts/data/augment_fasta.py \
   --fasta input.fa \
@@ -152,4 +237,4 @@ python scripts/train/train_psalm.py \
 ## Dependencies
 - `PyYAML` is required for config loading.
 - `faesm` is required only if `use_fa: true` in config.
-- Core runtime uses `torch`, `transformers`, and `datasets`.
+- Core inference runtime uses `torch`, `transformers`, `biopython`, `pandas`, `numba`, and `catboost`.

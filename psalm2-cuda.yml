@@ -1,0 +1,26 @@
+name: psalm2-cuda
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12.8
+  - pytorch=2.5.1
+  - pytorch-cuda=12.4
+  - accelerate=1.2.1
+  - datasets=3.2.0
+  - einops=0.8.0
+  - safetensors=0.5.2
+  - transformers=4.48.0
+  - ipykernel=6.29.5
+  - biopython=1.85
+  - pandas
+  - pyyaml
+  - tqdm
+  - huggingface_hub
+  - scikit-learn=1.8.0
+  - pip=24.3.1
+  - pip:
+      - catboost==1.2.8
+      - numba==0.61.2
