@@ -18,23 +18,23 @@ previous.
 │              Protein Sequence Annotation using a Language Model              │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
-                               PSALM CLI (v2.0.7)
+                               PSALM CLI (v2.1.2)
 ```
-## CLI (Recommended)
-Quick usage:
-```
-psalm-scan -f path/to/your_sequence.fasta
-psalm-scan -v -f path/to/your_sequence.fasta --to-tsv results.tsv
-psalm-scan --no-refine -f path/to/your_sequence.fasta
-```
+
+
 
 Persistent session mode (load model once, scan many times):
 ```
-psalm-shell -d auto
+psalm -d auto
 # inside shell:
-#   scan -f path/to/seqs.fa -v
-#   scan -s "MSTNPKPQR..." --no-refine
+#   scan -f path/to/seqs.fa
+#   scan -s "MSTNPKPQR..."
 #   quit
+```
+
+Quick usage:
+```
+psalm-scan -f path/to/your_sequence.fasta
 ```
 
 CLI behavior notes:
@@ -43,6 +43,14 @@ CLI behavior notes:
 - `--quiet` suppresses scan result output only; startup/status still prints
 - `--to-tsv` and `--to-txt` work for single or multi-sequence FASTA
 - `-v/--verbose` enables detailed alignment and model tables
+- `-E` keeps domains with `E-value <= threshold` (default: `0.01`)
+- `-Z` sets dataset size for E-value scaling
+  - if omitted for `-s`: `Z=1`
+  - if omitted for `-f`: `Z=#sequences in FASTA`
+- E-value values are computed from a packaged empirical negative-score interpolation curve
+- HITS table is sorted by increasing `E-value`
+- HITS and per-family tables show `Len Frac`
+- `--to-tsv` is the supported machine-readable output format
 - Model lookup order:
   1) explicit local path
   2) `models/<model_name>` under repository
@@ -68,7 +76,7 @@ conda activate psalm2-cuda
 ```
 python -m pip install --index-url https://test.pypi.org/simple/ \
   --extra-index-url https://pypi.org/simple \
-  protein-sequence-annotation==2.0.7
+  protein-sequence-annotation==2.1.2
 ```
 
 Optional: run without activating conda manually:
@@ -77,7 +85,6 @@ conda run -n psalm2 psalm-scan -f path/to/seqs.fa
 ```
 
 ## Python API
-The Python API remains fully supported.
 
 ```python
 from psalm.psalm_model import PSALM
@@ -94,9 +101,9 @@ results = psalm.scan(sequence="MSTNPKPQR...AA")
 
 Output options:
 - `to_tsv="results.tsv"` writes:
-  `seq_id,pfam,start,stop,score,bit_score,len_ratio,bias,status`
+  `Sequence,E-value,Score,Pfam,Start,Stop,Model,Len Frac,Status`
 - `to_txt="results.txt"` saves console-style output
-- For multi-sequence FASTA, outputs are combined with `seq_id` tags
+- For multi-sequence FASTA, TSV rows are combined with the query id in the `Sequence` column
 
 ## Scripts overview
 The core workflow is:

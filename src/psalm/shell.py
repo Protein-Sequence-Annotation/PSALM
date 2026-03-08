@@ -1,19 +1,32 @@
 from __future__ import annotations
 
+import atexit
 import argparse
-import json
 import shlex
+import sys
 from pathlib import Path
-from typing import List
+
+try:
+    import readline
+except ImportError:  # pragma: no cover - platform-dependent
+    readline = None
 
 from psalm import __version__ as PSALM_VERSION
-from psalm.cli import DEFAULT_MODEL_NAME, _format_model_source, _print_startup_banner
-from psalm.psalm_model import PSALM
+from psalm.cli import (
+    DEFAULT_MODEL_NAME,
+    build_scan_parser,
+    load_model_with_startup,
+    run_scan_from_args,
+)
+
+
+HISTORY_LIMIT = 100
+HISTORY_PATH = Path.home() / ".psalm_history"
 
 
 def _build_main_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Interactive PSALM session with one-time model loading.",
+        description="Interactive PSALM shell with one-time model loading.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("-m", "--model-name", default=DEFAULT_MODEL_NAME)
@@ -26,76 +39,78 @@ def _build_main_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _build_scan_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="scan",
-        add_help=False,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    parser.add_argument("-s", "--sequence", default=None)
-    parser.add_argument("-f", "--fasta", default=None)
-    parser.add_argument("-t", "--score-thresh", type=float, default=0.0)
-    parser.add_argument("-b", "--beam-size", type=int, default=64)
-    parser.add_argument("--to-tsv", default=None)
-    parser.add_argument("--to-txt", default=None)
-    parser.add_argument("--json-out", default=None)
-    parser.add_argument("--no-refine", action="store_true")
-    parser.add_argument("-v", "--verbose", action="store_true")
-    parser.add_argument("-q", "--quiet", action="store_true")
-    parser.add_argument("-h", "--help", action="store_true")
-    return parser
-
-
 def _print_shell_help() -> None:
     print("Commands:")
     print("  scan [args]       Run one scan (use scan --help for flags)")
-    print("  help              Show command help")
+    print("  help              Show shell command help")
     print("  quit              Leave shell (recommended)")
     print("  exit              Leave shell (alias)")
 
 
+def _configure_history() -> None:
+    if readline is None:
+        return
+    readline.set_history_length(HISTORY_LIMIT)
+    try:
+        readline.read_history_file(str(HISTORY_PATH))
+    except FileNotFoundError:
+        pass
+
+    def _save_history() -> None:
+        readline.set_history_length(HISTORY_LIMIT)
+        try:
+            readline.write_history_file(str(HISTORY_PATH))
+        except OSError:
+            pass
+
+    atexit.register(_save_history)
+
+
+def _remember_command(raw: str) -> None:
+    if readline is None:
+        return
+    if raw.strip() == "":
+        return
+    readline.add_history(raw)
+    while readline.get_current_history_length() > HISTORY_LIMIT:
+        readline.remove_history_item(0)
+
+
 def main() -> None:
-    args = _build_main_parser().parse_args()
+    parser = _build_main_parser()
+    if len(sys.argv) > 1 and sys.argv[1] == "help":
+        parser.print_help()
+        return
+    args = parser.parse_args()
+    _configure_history()
 
-    _print_startup_banner()
-    print(f"[startup] Requested device: {args.device}")
-    print(f"[startup] Model ID/path: {args.model_name}")
-    print("[startup] Checking model location and loading...")
-    startup_events: List[str] = []
+    try:
+        model = load_model_with_startup(
+            model_name=args.model_name,
+            device=args.device,
+        )
+    except KeyboardInterrupt:
+        print("\nStartup cancelled.")
+        return
+    except Exception as exc:
+        print(f"startup error: {exc}")
+        return
 
-    def _status(msg: str) -> None:
-        startup_events.append(msg)
-
-    model = PSALM(
-        model_name=args.model_name,
-        device=args.device,
-        status_callback=_status,
-    )
-    resolved_device = getattr(model, "resolved_device", None)
-    if resolved_device is not None:
-        if str(args.device).strip().lower() == "auto":
-            print(f"[startup] Auto resolved device: {resolved_device}")
-        else:
-            print(f"[startup] Resolved device: {resolved_device}")
-    model_source = _format_model_source(getattr(model, "model_source", None))
-    if model_source not in {"None", ""}:
-        print(f"[startup] Model source: {model_source}")
-    for event in startup_events:
-        print(f"[startup] {event}")
-    if not getattr(model, "warmup_executed", False):
-        print("[startup] Warmup: skipped")
-    print("─" * 80)
-    print("PSALM shell ready. Type 'help' for commands.")
-
-    scan_parser = _build_scan_parser()
+    scan_parser = build_scan_parser(prog="scan", add_help=True, exit_on_error=False)
     while True:
         try:
-            raw = input("psalm> ").strip()
-        except (EOFError, KeyboardInterrupt):
+            raw = input(">>PSALM>> ")
+        except EOFError:
             print()
             break
+        except KeyboardInterrupt:
+            print()
+            continue
+
+        raw = raw.strip()
         if not raw:
             continue
+        _remember_command(raw)
         if raw in {"quit", "exit"}:
             break
         if raw == "help":
@@ -105,30 +120,33 @@ def main() -> None:
             print("Unknown command. Use: scan/help/quit")
             continue
 
-        tokens = shlex.split(raw)
-        scan_args = scan_parser.parse_args(tokens[1:])
-        if scan_args.help:
+        try:
+            tokens = shlex.split(raw)
+        except ValueError as exc:
+            print(f"scan error: {exc}")
+            continue
+        if any(token in {"-h", "--help"} for token in tokens[1:]):
             scan_parser.print_help()
             continue
+
+        try:
+            scan_args = scan_parser.parse_args(tokens[1:])
+        except argparse.ArgumentError as exc:
+            print(f"scan error: {exc}")
+            continue
+        except SystemExit:
+            print("scan error: invalid arguments")
+            continue
         if (scan_args.sequence is None) == (scan_args.fasta is None):
-            print("scan error: provide exactly one of --sequence or --fasta")
+            print("scan error: provide exactly one of -s or -f")
             continue
 
-        result = model.scan(
-            sequence=scan_args.sequence,
-            fasta=scan_args.fasta,
-            score_thresh=scan_args.score_thresh,
-            beam_size=scan_args.beam_size,
-            refine_extended=(not scan_args.no_refine),
-            verbose=scan_args.verbose,
-            to_tsv=scan_args.to_tsv,
-            to_txt=scan_args.to_txt,
-            _print_output=(not scan_args.quiet),
-        )
-        if scan_args.json_out:
-            out_path = Path(scan_args.json_out)
-            with out_path.open("w", encoding="utf-8") as handle:
-                json.dump(result, handle, indent=2)
+        try:
+            run_scan_from_args(model, scan_args)
+        except KeyboardInterrupt:
+            print("\nscan cancelled")
+        except Exception as exc:
+            print(f"scan error: {exc}")
 
 
 if __name__ == "__main__":

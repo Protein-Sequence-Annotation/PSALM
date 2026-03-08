@@ -8,21 +8,21 @@ import sys
 import time
 import warnings
 from importlib.metadata import PackageNotFoundError, version as pkg_version
-from datetime import datetime
-from collections import OrderedDict
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
 from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 from transformers import AutoConfig, AutoTokenizer
 
 from psalm.config import get_model_config
 from psalm.inference.cbm_score import add_cbm_scores
 from psalm.inference.decoder import annotate_domains
+from psalm.inference.evalue import EValueCurve, load_default_curve
+from psalm.report import HitRow, build_hit_rows, render_scan_output, write_hits_tsv
 
 
 def _auto_device() -> torch.device:
@@ -211,6 +211,17 @@ def _get_psalm_version() -> str:
         return "0+local"
 
 
+def _format_model_source_display(source: Optional[str]) -> str:
+    mapping = {
+        "local_path": "Local path",
+        "repo_models_dir": "Repo models directory",
+        "hf_cache": "Hugging Face cache",
+        "hf_download": "Hugging Face download",
+    }
+    key = str(source)
+    return mapping.get(key, key)
+
+
 def _load_cbm_model(model_dir: Path):
     cbm_path = model_dir / "score.cbm"
     if not cbm_path.exists():
@@ -309,6 +320,38 @@ def _resolve_use_fa(use_fa: bool, device: torch.device) -> bool:
     return True
 
 
+_VALID_SEQUENCE_CHARS = set("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+
+def _normalize_sequence_text(sequence: str, source: str) -> str:
+    normalized = "".join(sequence.split()).upper()
+    if normalized == "":
+        raise ValueError(f"{source} is empty after removing whitespace.")
+    invalid_chars = sorted({ch for ch in normalized if ch not in _VALID_SEQUENCE_CHARS})
+    if invalid_chars:
+        joined = ", ".join(repr(ch) for ch in invalid_chars)
+        raise ValueError(
+            f"{source} contains invalid characters: {joined}. "
+            "Sequences may contain letters only."
+        )
+    return normalized
+
+
+def _load_fasta_records_checked(fasta: str) -> List[SeqRecord]:
+    fasta_path = Path(fasta).expanduser()
+    if not fasta_path.exists():
+        raise FileNotFoundError(f"FASTA file not found: {fasta}")
+    if not fasta_path.is_file():
+        raise ValueError(f"FASTA path is not a file: {fasta}")
+    try:
+        records = list(SeqIO.parse(str(fasta_path), "fasta"))
+    except Exception as exc:
+        raise ValueError(f"Could not parse FASTA file: {fasta}") from exc
+    if not records:
+        raise ValueError(f"FASTA file is empty or contains no sequences: {fasta}")
+    return records
+
+
 class PSALM(nn.Module):
     """
     PSALM integrates an ESM model with a single MLP head for Pfam-family classification.
@@ -330,6 +373,7 @@ class PSALM(nn.Module):
         self.model_dir: Optional[Path] = None
         self.model_source: Optional[str] = None
         self.cbm_model = None
+        self.evalue_curve: Optional[EValueCurve] = None
         self.use_fa = False
         self.warmup_executed = False
         self.resolved_device: Optional[torch.device] = None
@@ -358,6 +402,10 @@ class PSALM(nn.Module):
                 )
             self.tokenizer = AutoTokenizer.from_pretrained(model_name_cfg)
             families = cfg.output_size
+            try:
+                self.evalue_curve = load_default_curve()
+            except Exception:
+                self.evalue_curve = None
         else:
             self.model_dir, self.model_source = _resolve_model_dir_with_source(model_name)
             if self.status_callback is not None:
@@ -432,6 +480,7 @@ class PSALM(nn.Module):
             self.state_pfam_ids_full = resources["state_pfam_ids_full"]
             self.state_role_ids_full = resources["state_role_ids_full"]
             self.cbm_model = _load_cbm_model(self.model_dir)
+            self.evalue_curve = load_default_curve()
             self.to(device_obj)
             if warmup is None:
                 warmup = True
@@ -563,6 +612,8 @@ class PSALM(nn.Module):
                     seq_id=seq_id,
                     score_thresh=0.0,
                     beam_size=64,
+                    dataset_size=1.0,
+                    evalue_thresh=0.01,
                     prior_mid_to_start=3.4e-5,
                     prior_stop_to_mid=4.817e-3,
                     prior_stop_to_start=5.540e-3,
@@ -574,12 +625,86 @@ class PSALM(nn.Module):
             except Exception:
                 continue
 
+    def _domain_evalue(
+        self,
+        domain: Tuple[str, int, int, float, float, float, float, str],
+        dataset_size: float,
+    ) -> float:
+        if self.evalue_curve is None:
+            raise RuntimeError("E-value curve not loaded; cannot compute E-values during scan().")
+        return self.evalue_curve.evalue_from_score(domain[3], dataset_size)
+
+    def _build_hit_rows(
+        self,
+        seq_id: str,
+        domains: List[Tuple[str, int, int, float, float, float, float, str]],
+        dataset_size: float,
+    ) -> List[HitRow]:
+        return build_hit_rows(
+            seq_id=seq_id,
+            domains=domains,
+            dataset_size=dataset_size,
+            evalue_for_domain=self._domain_evalue,
+            label_mapping=self.label_mapping,
+        )
+
+    def _write_hits_tsv(self, path: str, hit_rows: List[HitRow]) -> None:
+        write_hits_tsv(path, hit_rows)
+
+    def _render_scan_output(
+        self,
+        *,
+        sequence: str,
+        seq_id: str,
+        hit_rows: List[HitRow],
+        score_thresh: float,
+        evalue_thresh: float,
+        score_pass: int,
+        total_domains_raw: int,
+        total_fams: int,
+        kept_families: int,
+        domains_original_scored: List[Tuple[str, int, int, float, float, float, float, str]],
+        gamma,
+        best_path,
+        verbose: bool,
+        refine_extended: bool,
+        beam_size: int,
+        inf_dt: float,
+        dec_dt: float,
+    ) -> None:
+        render_scan_output(
+            sequence=sequence,
+            seq_id=seq_id,
+            hit_rows=hit_rows,
+            score_thresh=score_thresh,
+            evalue_thresh=evalue_thresh,
+            score_pass=score_pass,
+            total_domains_raw=total_domains_raw,
+            total_fams=total_fams,
+            kept_families=kept_families,
+            domains_original_scored=domains_original_scored,
+            gamma=gamma,
+            best_path=best_path,
+            verbose=verbose,
+            refine_extended=refine_extended,
+            beam_size=beam_size,
+            inf_dt=inf_dt,
+            dec_dt=dec_dt,
+            model_label=self.model_name or getattr(self.esm_model.config, "name_or_path", "training"),
+            model_source_label=_format_model_source_display(self.model_source),
+            device_label=str(next(self.parameters()).device),
+            psalm_version=_get_psalm_version(),
+            label_mapping=self.label_mapping,
+        )
+
     def _scan_one(
         self,
         sequence: str,
         seq_id: str,
         score_thresh: float,
         beam_size: int,
+        dataset_size: float,
+        evalue_thresh: float,
         prior_mid_to_start: float,
         prior_stop_to_mid: float,
         prior_stop_to_start: float,
@@ -622,8 +747,8 @@ class PSALM(nn.Module):
         best_path = None
         gamma = None
         dec_dt = 0.0
-        total_domains = 0
-        passed = 0
+        total_domains_raw = 0
+        score_pass = 0
 
         sub_idx = torch.where(keep_full)[0]
         if not (sub_idx.numel() <= 1 and (sub_idx == self.none_label).all()):
@@ -662,218 +787,41 @@ class PSALM(nn.Module):
             domains_original_scored = add_cbm_scores(domains_original, self.cbm_model)
             domains_scored = add_cbm_scores(domains, self.cbm_model)
 
-            total_domains = len(domains_scored)
-            filtered = []
+            total_domains_raw = len(domains_scored)
+            score_filtered = []
             for pfam, start, stop, cbm_score, bit_score, len_ratio, bias, status in domains_scored:
                 if cbm_score >= score_thresh:
-                    filtered.append((pfam, start, stop, cbm_score, bit_score, len_ratio, bias, status))
-            domains_scored = filtered
-            passed = len(domains_scored)
+                    score_filtered.append((pfam, start, stop, cbm_score, bit_score, len_ratio, bias, status))
+            score_pass = len(score_filtered)
 
-        def _make_match_line(length: int, status: str) -> str:
-            if length <= 0:
-                return ""
-            no_start = "no start" in status
-            no_stop = "no stop" in status
-            chars = ["="] * length
-            if length == 1:
-                if no_start and no_stop:
-                    chars[0] = "<"
-                elif no_start:
-                    chars[0] = "<"
-                elif no_stop:
-                    chars[0] = ">"
-                else:
-                    chars[0] = "["
-                return "".join(chars)
-            chars[0] = "<" if no_start else "["
-            chars[-1] = ">" if no_stop else "]"
-            return "".join(chars)
+            evalue_filtered = []
+            for domain in score_filtered:
+                evalue = self._domain_evalue(domain, dataset_size)
+                if evalue <= evalue_thresh:
+                    evalue_filtered.append(domain)
+            domains_scored = evalue_filtered
 
+        hit_rows = self._build_hit_rows(seq_id, domains_scored, dataset_size)
         if print_output:
-            model_label = self.model_name or getattr(self.esm_model.config, "name_or_path", "training")
-            device_label = str(next(self.parameters()).device)
-            psalm_ver = _get_psalm_version()
-            stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            rows = [
-                ("PSALM", psalm_ver),
-                ("Date/time", stamp),
-                ("Model", model_label),
-                ("Device", device_label),
-                ("Refinement", "On" if refine_extended else "Off"),
-                ("Beam size", str(beam_size)),
-                ("Embedding time", f"{inf_dt*1000:.2f} ms"),
-                ("Decoding time", f"{dec_dt*1000:.2f} ms"),
-                ("Family filter", f"{K}/{total_fams} families passed"),
-                ("Score filter", f">={score_thresh:.2f}: {passed}/{total_domains} domains passed"),
-            ]
-            key_w = max(len(k) for k, _ in rows)
-            val_w = max(len(v) for _, v in rows)
-            border = "+" + "-" * (key_w + 2) + "+" + "-" * (val_w + 2) + "+"
-            print(border)
-            for k, v in rows:
-                print(f"| {k:<{key_w}} | {v:<{val_w}} |")
-            print(border)
-            print(f">>> Query: {seq_id} ({len(sequence)} aa)")
-
-            sorted_domains = sorted(domains_scored, key=lambda x: x[3], reverse=True)
-            score_w = max(len("Score"), *(len(f"{d[3]:.3f}") for d in sorted_domains)) if sorted_domains else len("Score")
-            bit_w = max(len("Bit score"), *(len(f"{d[4]:.2f}") for d in sorted_domains)) if sorted_domains else len("Bit score")
-            bias_w = max(len("Bias"), *(len(f"{d[6]:.2f}") for d in sorted_domains)) if sorted_domains else len("Bias")
-            len_ratio_w = max(len("Len Frac"), *(len(f"{d[5]:.2f}") for d in sorted_domains)) if sorted_domains else len("Len Frac")
-            model_names = [self.label_mapping[pfam]["family_name"] for pfam, *_ in sorted_domains] if sorted_domains else []
-            model_w = max(len("Model"), *(len(n) for n in model_names)) if model_names else len("Model")
-            desc_w = max(len("Description"), *(len(self.label_mapping[pfam]["family_desc"]) for pfam, *_ in sorted_domains)) if sorted_domains else len("Description")
-            pfam_w = max(len("Pfam"), *(len(pfam) for pfam, *_ in sorted_domains)) if sorted_domains else len("Pfam")
-
-            print("--- Pfam domain hits ---")
-            header_fmt = (
-                f"{{:>{score_w}}}   "
-                f"{{:<{model_w}}}   {{:<{desc_w}}}   {{:<{pfam_w}}}   "
-                f"{{:>5}}   {{:>5}}"
+            self._render_scan_output(
+                sequence=sequence,
+                seq_id=seq_id,
+                hit_rows=hit_rows,
+                score_thresh=score_thresh,
+                evalue_thresh=evalue_thresh,
+                score_pass=score_pass,
+                total_domains_raw=total_domains_raw,
+                total_fams=total_fams,
+                kept_families=K,
+                domains_original_scored=domains_original_scored,
+                gamma=gamma,
+                best_path=best_path,
+                verbose=verbose,
+                refine_extended=refine_extended,
+                beam_size=beam_size,
+                inf_dt=inf_dt,
+                dec_dt=dec_dt,
             )
-            print(header_fmt.format("Score", "Model", "Description", "Pfam", "Start", "Stop"))
-            print("-" * (score_w+3+model_w+3+desc_w+3+pfam_w+3+5+3+5))
-
-            for pfam, start, stop, cbm_score, bit_score, len_ratio, bias, status in sorted_domains:
-                name = self.label_mapping[pfam]["family_name"]
-                desc_f = self.label_mapping[pfam]["family_desc"]
-                print(
-                    f"{cbm_score:>{score_w}.3f}   "
-                    f"{name:<{model_w}}   {desc_f:<{desc_w}}   {pfam:<{pfam_w}}   "
-                    f"{start:>5}   {stop:>5}"
-                )
-            print()
-
-            if verbose and domains_scored:
-                family_hits = OrderedDict()
-                for pfam, start, stop, cbm_score, bit_score, len_ratio, bias, status in domains_scored:
-                    family_hits.setdefault(pfam, []).append((start, stop, cbm_score, bit_score, len_ratio, bias, status))
-
-                print("Domain annotation for each model (and alignments):\n")
-
-                nested_components = {}
-                for pfam, start_combined, stop_combined, cbm_score, bit_score, len_ratio, bias, status in domains_scored:
-                    if status == "full (merged)":
-                        components = []
-                        for pfam_orig, start_orig, stop_orig, cbm_o, bit_o, len_o, bias_o, status_o in domains_original_scored:
-                            if (
-                                pfam_orig == pfam
-                                and start_orig >= start_combined
-                                and stop_orig <= stop_combined
-                                and status_o in [
-                                    "partial (no stop)",
-                                    "partial (no start)",
-                                    "partial (no start or stop)",
-                                ]
-                            ):
-                                components.append((start_orig, stop_orig, cbm_o, bit_o, len_o, bias_o, status_o))
-                        if len(components) >= 2:
-                            components.sort(key=lambda x: x[0])
-                            nested_components[(pfam, start_combined, stop_combined)] = components
-
-                for pfam, hits in family_hits.items():
-                    name = self.label_mapping[pfam]["family_name"]
-                    desc_f = self.label_mapping[pfam]["family_desc"]
-                    print(f">> {name}   {desc_f}   ({pfam})\n")
-
-                    idx_w = max(len("#"), len(str(len(hits))))
-                    hdr = (
-                        f"{{:>{idx_w}}}   {{:>{score_w}}}   {{:>{bit_w}}}   {{:>{bias_w}}}   {{:>{len_ratio_w}}}   "
-                        f"{{:>5}}   {{:>5}}   {{:<10}}   {{:<{pfam_w}}}"
-                    )
-                    print(hdr.format("#", "Score", "Bit score", "Bias", "Len Frac", "Start", "Stop", "Status", "Pfam"))
-                    print("-" * (idx_w+3+score_w+3+bit_w+3+bias_w+3+len_ratio_w+3+5+3+5+3+10+3+pfam_w))
-
-                    for i, (start, stop, cbm_score, bit_score, len_ratio, bias, status) in enumerate(hits, start=1):
-                        print(
-                            f"{i:>{idx_w}}   "
-                            f"{cbm_score:>{score_w}.3f}   "
-                        f"{bit_score:>{bit_w}.2f}   "
-                        f"{bias:>{bias_w}.2f}   "
-                        f"{len_ratio:>{len_ratio_w}.2f}   "
-                            f"{start:>5}   "
-                            f"{stop:>5}   "
-                            f"{status:<10}   "
-                            f"{pfam}"
-                        )
-                    print()
-
-                    indent = " " * 6
-                    for i, (start, stop, cbm_score, bit_score, len_ratio, bias, status) in enumerate(hits, start=1):
-                        nested_key = (pfam, start, stop)
-                        if nested_key in nested_components:
-                            components = nested_components[nested_key]
-                            print(
-                                f"== domain {i}    score: {cbm_score:.3f}    bit_score: {bit_score:.2f}    "
-                                f"bias: {bias:.2f}    len_ratio: {len_ratio:.2f}    [nested]"
-                            )
-
-                            for comp_idx, (comp_start, comp_stop, cbm_c, bit_c, len_c, bias_c, status_c) in enumerate(components, 1):
-                                print(
-                                    f"   component {comp_idx}    score: {cbm_c:.3f}    bit_score: {bit_c:.2f}    "
-                                    f"bias: {bias_c:.2f}    len_ratio: {len_c:.2f}    {status_c}"
-                                )
-                                region_seq = sequence[comp_start-1:comp_stop]
-                                length = len(region_seq)
-
-                                match_str = _make_match_line(length, status_c)
-                                prob_chars = []
-                                for offset in range(length):
-                                    t = comp_start - 1 + offset
-                                    p = float(gamma[t, best_path[t]]) if gamma is not None else 0.0
-                                    if p < 0.05:
-                                        pc = "0"
-                                    elif p < 0.95:
-                                        pc = str(min(9, int(p * 10)))
-                                    else:
-                                        pc = "*"
-                                    prob_chars.append(pc)
-                                prob_str = "".join(prob_chars)
-
-                                for off in range(0, length, 80):
-                                    seq_chunk = region_seq[off:off+80]
-                                    m_chunk = match_str[off:off+80]
-                                    p_chunk = prob_str[off:off+80]
-                                    abs_s = comp_start + off
-                                    abs_e = comp_start + off + len(seq_chunk) - 1
-                                    print(f"{abs_s:>5} {seq_chunk:<80} {abs_e:>5}")
-                                    print(indent + m_chunk)
-                                    print(indent + p_chunk)
-                                print()
-                        else:
-                            print(
-                                f"== domain {i}    score: {cbm_score:.3f}    bit_score: {bit_score:.2f}    "
-                                f"bias: {bias:.2f}    len_ratio: {len_ratio:.2f}"
-                            )
-                            region_seq = sequence[start-1:stop]
-                            length = len(region_seq)
-
-                            match_str = _make_match_line(length, status)
-                            prob_chars = []
-                            for offset in range(length):
-                                t = start - 1 + offset
-                                p = float(gamma[t, best_path[t]]) if gamma is not None else 0.0
-                                if p < 0.05:
-                                    pc = "0"
-                                elif p < 0.95:
-                                    pc = str(min(9, int(p * 10)))
-                                else:
-                                    pc = "*"
-                                prob_chars.append(pc)
-                            prob_str = "".join(prob_chars)
-
-                            for off in range(0, length, 80):
-                                seq_chunk = region_seq[off:off+80]
-                                m_chunk = match_str[off:off+80]
-                                p_chunk = prob_str[off:off+80]
-                                abs_s = start + off
-                                abs_e = start + off + len(seq_chunk) - 1
-                                print(f"{abs_s:>5} {seq_chunk:<80} {abs_e:>5}")
-                                print(indent + m_chunk)
-                                print(indent + p_chunk)
-                            print()
-                    print()
 
         return domains_scored
 
@@ -883,6 +831,8 @@ class PSALM(nn.Module):
         fasta: str = None,
         score_thresh: float = 0.0,
         beam_size: int = 64,
+        dataset_size: Optional[float] = None,
+        evalue_thresh: float = 0.01,
         prior_mid_to_start: float = 3.4e-5,
         prior_stop_to_mid: float = 4.817e-3,
         prior_stop_to_start: float = 5.540e-3,
@@ -902,12 +852,14 @@ class PSALM(nn.Module):
             fasta: Path to FASTA file containing one or more protein sequences
             score_thresh: CBM score threshold for filtering domains
             beam_size: Beam size for decoding
+            dataset_size: Dataset size (Z) for E-value scaling; auto-derived when omitted
+            evalue_thresh: Keep only domains with E-value <= this threshold
             prior_mid_to_start: Prior for middle to start transition
             prior_stop_to_mid: Prior for stop to middle transition
             prior_stop_to_start: Prior for stop to start transition
             T: Temperature scaling factor for logits (1.0 = no scaling)
             refine_extended: Run extended refinement for long domains
-            to_tsv: Path to save results as TSV (optional)
+            to_tsv: Path to save results as TSV with the same ordering as the HITS table
             to_txt: Path to save printed output as text (optional)
             verbose: If True, print detailed results and alignments
 
@@ -921,13 +873,85 @@ class PSALM(nn.Module):
             base, ext = os.path.splitext(path)
             return path if ext else f"{base}{default_ext}"
 
+        def _run_with_optional_text_capture(active_seq: str, active_seq_id: str):
+            if emit_text_file and emit_console:
+                buffer = io.StringIO()
+                tee = _TeeIO(sys.stdout, buffer)
+                with contextlib.redirect_stdout(tee):
+                    domains = self._scan_one(
+                        sequence=active_seq,
+                        seq_id=active_seq_id,
+                        score_thresh=score_thresh,
+                        beam_size=beam_size,
+                        dataset_size=effective_dataset_size,
+                        evalue_thresh=evalue_thresh,
+                        prior_mid_to_start=prior_mid_to_start,
+                        prior_stop_to_mid=prior_stop_to_mid,
+                        prior_stop_to_start=prior_stop_to_start,
+                        T=T,
+                        refine_extended=refine_extended,
+                        verbose=verbose,
+                        print_output=emit_printable,
+                    )
+                with open(txt_path, "w", encoding="utf-8") as handle:
+                    handle.write(buffer.getvalue())
+                return domains
+
+            if emit_text_file and not emit_console:
+                buffer = io.StringIO()
+                with contextlib.redirect_stdout(buffer):
+                    domains = self._scan_one(
+                        sequence=active_seq,
+                        seq_id=active_seq_id,
+                        score_thresh=score_thresh,
+                        beam_size=beam_size,
+                        dataset_size=effective_dataset_size,
+                        evalue_thresh=evalue_thresh,
+                        prior_mid_to_start=prior_mid_to_start,
+                        prior_stop_to_mid=prior_stop_to_mid,
+                        prior_stop_to_start=prior_stop_to_start,
+                        T=T,
+                        refine_extended=refine_extended,
+                        verbose=verbose,
+                        print_output=emit_printable,
+                    )
+                with open(txt_path, "w", encoding="utf-8") as handle:
+                    handle.write(buffer.getvalue())
+                return domains
+
+            return self._scan_one(
+                sequence=active_seq,
+                seq_id=active_seq_id,
+                score_thresh=score_thresh,
+                beam_size=beam_size,
+                dataset_size=effective_dataset_size,
+                evalue_thresh=evalue_thresh,
+                prior_mid_to_start=prior_mid_to_start,
+                prior_stop_to_mid=prior_stop_to_mid,
+                prior_stop_to_start=prior_stop_to_start,
+                T=T,
+                refine_extended=refine_extended,
+                verbose=verbose,
+                print_output=emit_printable,
+            )
+
+        if dataset_size is not None and dataset_size <= 0:
+            raise ValueError("dataset_size must be > 0 when provided.")
+        if sequence is not None and fasta is not None:
+            raise ValueError("Provide exactly one of sequence or fasta, not both.")
+        if sequence is None and fasta is None:
+            raise ValueError("Provide either sequence or fasta.")
+
         txt_path = _normalize_path(to_txt, ".txt")
         emit_console = bool(_print_output)
         emit_text_file = bool(txt_path)
         emit_printable = emit_console or emit_text_file
+        effective_dataset_size = float(dataset_size) if dataset_size is not None else 1.0
 
         if _seq_id is None and fasta is not None:
-            records = list(SeqIO.parse(fasta, "fasta"))
+            records = _load_fasta_records_checked(fasta)
+            if dataset_size is None:
+                effective_dataset_size = float(max(1, len(records)))
             if len(records) > 1:
                 results: Dict[str, List[Tuple[str, int, int, float, float, float, float, str]]] = {}
                 used_ids: Dict[str, int] = {}
@@ -952,10 +976,16 @@ class PSALM(nn.Module):
                             rec_id = f"{rec_id}_{used_ids[rec_id]}"
                         else:
                             used_ids[rec_id] = 1
+                        record_sequence = _normalize_sequence_text(
+                            str(rec.seq),
+                            f"sequence '{rec_id}' in FASTA '{fasta}'",
+                        )
                         sub = self.scan(
-                            sequence=str(rec.seq),
+                            sequence=record_sequence,
                             score_thresh=score_thresh,
                             beam_size=beam_size,
+                            dataset_size=effective_dataset_size,
+                            evalue_thresh=evalue_thresh,
                             prior_mid_to_start=prior_mid_to_start,
                             prior_stop_to_mid=prior_stop_to_mid,
                             prior_stop_to_start=prior_stop_to_start,
@@ -974,89 +1004,31 @@ class PSALM(nn.Module):
                     with open(txt_path, "w", encoding="utf-8") as handle:
                         handle.write(buffer.getvalue())
                 if to_tsv:
-                    rows = []
+                    rows: List[_HitRow] = []
                     for seq_id, domains in results.items():
-                        for domain in domains:
-                            rows.append((seq_id, *domain))
-                    df = pd.DataFrame(
-                        rows,
-                        columns=["seq_id", "pfam", "start", "stop", "score", "bit_score", "len_ratio", "bias", "status"],
-                    )
-                    df.to_csv(to_tsv, sep="\t", index=False)
+                        rows.extend(self._build_hit_rows(seq_id, domains, effective_dataset_size))
+                    self._write_hits_tsv(to_tsv, rows)
                 return results
 
         if fasta is not None:
-            rec = SeqIO.read(fasta, "fasta")
-            sequence = str(rec.seq)
+            records = _load_fasta_records_checked(fasta)
+            rec = records[0]
+            sequence = _normalize_sequence_text(
+                str(rec.seq),
+                f"sequence '{(rec.id or 'seq1').strip() or 'seq1'}' in FASTA '{fasta}'",
+            )
             seq_id = (rec.id or "").strip()
         else:
+            sequence = _normalize_sequence_text(sequence, "sequence input")
             seq_id = ""
         if _seq_id is not None:
             seq_id = _seq_id
         if seq_id == "":
             seq_id = "seq1"
-
-        if sequence is None:
-            raise ValueError("Provide either sequence or fasta.")
-        if emit_text_file and emit_console:
-            buffer = io.StringIO()
-            tee = _TeeIO(sys.stdout, buffer)
-            with contextlib.redirect_stdout(tee):
-                domains_scored = self._scan_one(
-                    sequence=sequence,
-                    seq_id=seq_id,
-                    score_thresh=score_thresh,
-                    beam_size=beam_size,
-                    prior_mid_to_start=prior_mid_to_start,
-                    prior_stop_to_mid=prior_stop_to_mid,
-                    prior_stop_to_start=prior_stop_to_start,
-                    T=T,
-                    refine_extended=refine_extended,
-                    verbose=verbose,
-                    print_output=emit_printable,
-                )
-            with open(txt_path, "w", encoding="utf-8") as handle:
-                handle.write(buffer.getvalue())
-        elif emit_text_file and not emit_console:
-            buffer = io.StringIO()
-            with contextlib.redirect_stdout(buffer):
-                domains_scored = self._scan_one(
-                    sequence=sequence,
-                    seq_id=seq_id,
-                    score_thresh=score_thresh,
-                    beam_size=beam_size,
-                    prior_mid_to_start=prior_mid_to_start,
-                    prior_stop_to_mid=prior_stop_to_mid,
-                    prior_stop_to_start=prior_stop_to_start,
-                    T=T,
-                    refine_extended=refine_extended,
-                    verbose=verbose,
-                    print_output=emit_printable,
-                )
-            with open(txt_path, "w", encoding="utf-8") as handle:
-                handle.write(buffer.getvalue())
-        else:
-            domains_scored = self._scan_one(
-                sequence=sequence,
-                seq_id=seq_id,
-                score_thresh=score_thresh,
-                beam_size=beam_size,
-                prior_mid_to_start=prior_mid_to_start,
-                prior_stop_to_mid=prior_stop_to_mid,
-                prior_stop_to_start=prior_stop_to_start,
-                T=T,
-                refine_extended=refine_extended,
-                verbose=verbose,
-                print_output=emit_printable,
-            )
+        domains_scored = _run_with_optional_text_capture(sequence, seq_id)
 
         if to_tsv:
-            df = pd.DataFrame(
-                domains_scored,
-                columns=["pfam", "start", "stop", "score", "bit_score", "len_ratio", "bias", "status"],
-            )
-            df.insert(0, "seq_id", seq_id)
-            df.to_csv(to_tsv, sep="\t", index=False)
+            self._write_hits_tsv(to_tsv, self._build_hit_rows(seq_id, domains_scored, effective_dataset_size))
 
         return {seq_id: domains_scored}
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "protein-sequence-annotation"
-version = "2.0.7"
+version = "2.1.2"
 description = "Protein sequence domain annotation with PSALM."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -57,7 +57,7 @@ Homepage = "https://github.com/Protein-Sequence-Annotation/PSALM"
 
 [project.scripts]
 psalm-scan = "psalm.cli:main"
-psalm-shell = "psalm.shell:main"
+psalm = "psalm.shell:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -67,4 +67,4 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-psalm = ["config.yaml", "inference/warmup.fasta"]
+psalm = ["config.yaml", "inference/warmup.fasta", "inference/evalue_curve.json"]
