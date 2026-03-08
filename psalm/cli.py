@@ -16,7 +16,7 @@ from psalm.terminal_ui import (
     section_header,
 )
 
-DEFAULT_MODEL_NAME = "ProteinSequenceAnnotation/PSALM-2-InterPro30-104.0"
+DEFAULT_MODEL_NAME = "ProteinSequenceAnnotation/PSALM-2"
 
 
 class _HelpFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawTextHelpFormatter):

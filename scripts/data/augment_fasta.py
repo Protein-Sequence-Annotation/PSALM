@@ -6,8 +6,7 @@ from pathlib import Path
 
 def _add_src_to_path():
     repo_root = Path(__file__).resolve().parents[2]
-    src_root = repo_root / "src"
-    sys.path.insert(0, str(src_root))
+    sys.path.insert(0, str(repo_root))
 
 
 def build_parser():

@@ -13,7 +13,6 @@
 │              Protein Sequence Annotation using a Language Model              │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
-                               PSALM CLI (v2.1.2)
 ```
 
 
@@ -33,7 +32,7 @@ psalm-scan -f path/to/your_sequence.fasta
 ```
 
 CLI behavior notes:
-- Default model: `ProteinSequenceAnnotation/PSALM-2-InterPro30-104.0`
+- Default model: `ProteinSequenceAnnotation/PSALM-2`
 - Default device: `auto` (`cuda` -> `mps` -> `cpu`)
 - `--quiet` suppresses scan result output only; startup/status still prints
 - `--to-tsv` and `--to-txt` work for single or multi-sequence FASTA
@@ -90,7 +89,7 @@ conda run -n psalm psalm-scan -f path/to/seqs.fa
 ```python
 from psalm.psalm_model import PSALM
 
-psalm = PSALM(model_name="ProteinSequenceAnnotation/PSALM-2-InterPro30-104.0")
+psalm = PSALM(model_name="ProteinSequenceAnnotation/PSALM-2")
 
 # Scan FASTA
 results = psalm.scan(fasta="path/to/your_sequence.fasta")
@@ -153,9 +152,9 @@ Trains or evaluates PSALM on preprocessed shard datasets.
 **Config handling**
 - Training always uses a YAML config.
 - If `--config` is provided without a value, the script looks for
-  `src/psalm/config.yaml`.
+  `psalm/config.yaml`.
 - If `--config` is not provided, the script still looks for
-  `src/psalm/config.yaml`.
+  `psalm/config.yaml`.
 
 **Required args**
 - `--val-dir`, `--ignore-label`
@@ -210,7 +209,7 @@ The scripts expect a YAML config with these sections:
 **`data`**
 - `chunk_size`, `default_tmp_dir`, `default_shard_size`
 
-`src/psalm/config.yaml` is provided as a template with `null` values. Populate it
+`psalm/config.yaml` is provided as a template with `null` values. Populate it
 before use, or pass all required values via CLI without `--config`.
 
 ## Training CLI examples
@@ -236,7 +235,7 @@ python scripts/data/data_processing.py \
 
 ```
 python scripts/train/train_psalm.py \
-  --config src/psalm/config.yaml \
+  --config psalm/config.yaml \
   --train-dir data/shards/train \
   --val-dir data/shards/val \
   --ignore-label -100

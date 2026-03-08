@@ -16,7 +16,7 @@ from sklearn.metrics import average_precision_score, roc_auc_score
 from sklearn.utils.class_weight import compute_class_weight
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT / "src"))
+sys.path.insert(0, str(REPO_ROOT))
 
 from psalm.inference.cbm_score import (  # noqa: E402
     _build_feature_matrix,

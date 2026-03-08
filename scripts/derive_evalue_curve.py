@@ -11,7 +11,7 @@ import numpy as np
 DEFAULT_NEG_SCORES = Path(
     "/n/eddy_lab/Lab/protein_annotation_dl/PSALM-2/results/evalue_estimation_as_scored/neg_scores.pkl"
 )
-DEFAULT_OUT = Path("src/psalm/inference/evalue_curve.json")
+DEFAULT_OUT = Path("psalm/inference/evalue_curve.json")
 
 NORM_FACTOR = 24_076.0
 REF_DATASET_SIZE = 30_000_000.0

@@ -67,7 +67,7 @@ def _resolve_model_dir_with_source(model_name: str) -> Tuple[Path, str]:
     candidate = Path(model_name).expanduser()
     if candidate.exists():
         return candidate.resolve(), "local_path"
-    repo_root = Path(__file__).resolve().parents[2]
+    repo_root = Path(__file__).resolve().parents[1]
     local_candidate = repo_root / "models" / model_name
     if local_candidate.exists():
         return local_candidate.resolve(), "repo_models_dir"
@@ -1004,7 +1004,7 @@ class PSALM(nn.Module):
                     with open(txt_path, "w", encoding="utf-8") as handle:
                         handle.write(buffer.getvalue())
                 if to_tsv:
-                    rows: List[_HitRow] = []
+                    rows: List[HitRow] = []
                     for seq_id, domains in results.items():
                         rows.extend(self._build_hit_rows(seq_id, domains, effective_dataset_size))
                     self._write_hits_tsv(to_tsv, rows)

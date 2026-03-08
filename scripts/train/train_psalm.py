@@ -10,13 +10,12 @@ from pathlib import Path
 
 def _add_src_to_path():
     repo_root = Path(__file__).resolve().parents[2]
-    src_root = repo_root / "src"
-    sys.path.insert(0, str(src_root))
+    sys.path.insert(0, str(repo_root))
 
 
 def _resolve_config_path(config_arg):
     repo_root = Path(__file__).resolve().parents[2]
-    default_config = repo_root / "src" / "psalm" / "config.yaml"
+    default_config = repo_root / "psalm" / "config.yaml"
     if config_arg is None or config_arg == "__default__":
         if not default_config.exists():
             raise FileNotFoundError(
@@ -44,7 +43,7 @@ def main():
         nargs="?",
         const="__default__",
         default=None,
-        help="Path to a YAML config (use without a value to load src/psalm/config.yaml)",
+        help="Path to a YAML config (use without a value to load psalm/config.yaml)",
     )
     parser.add_argument(
         "--train-dir",

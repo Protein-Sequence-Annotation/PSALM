@@ -60,11 +60,11 @@ psalm-scan = "psalm.cli:main"
 psalm = "psalm.shell:main"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
 include-package-data = true
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
+include = ["psalm", "psalm.*"]
 
 [tool.setuptools.package-data]
 psalm = ["config.yaml", "inference/warmup.fasta", "inference/evalue_curve.json"]
