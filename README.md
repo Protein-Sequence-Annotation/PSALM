@@ -54,29 +54,35 @@ CLI behavior notes:
 
 ## Installation
 
-### Conda environments (local development)
-No CUDA:
+Create a fresh Python 3.10 environment, install PyTorch for your hardware, then install PSALM.
 ```
-conda env create -f psalm2.yml
-conda activate psalm2
-```
+conda create -n psalm python=3.10 -y
+conda activate psalm
+python -m pip install --upgrade pip
 
-CUDA (NVIDIA GPU):
-```
-conda env create -f psalm2-cuda.yml
-conda activate psalm2-cuda
-```
+# 1) Install PyTorch for your hardware
+# Apple Silicon (MPS):
+python -m pip install torch torchvision torchaudio
 
-### Install from latest TestPyPI build
-```
+# CPU-only (Linux/Windows/macOS):
+# python -m pip install torch torchvision torchaudio
+
+# NVIDIA CUDA 12.1:
+# python -m pip install --index-url https://download.pytorch.org/whl/cu121 \
+#   torch torchvision torchaudio
+
+# 2) Install PSALM
 python -m pip install --index-url https://test.pypi.org/simple/ \
   --extra-index-url https://pypi.org/simple \
   protein-sequence-annotation==2.1.2
 ```
 
+If you are unsure which PyTorch command matches your GPU/driver, use the official selector:
+https://pytorch.org/get-started/locally/
+
 Optional: run without activating conda manually:
 ```
-conda run -n psalm2 psalm-scan -f path/to/seqs.fa
+conda run -n psalm psalm-scan -f path/to/seqs.fa
 ```
 
 ## Python API
