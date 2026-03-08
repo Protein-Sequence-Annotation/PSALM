@@ -62,14 +62,14 @@ python -m pip install --upgrade pip
 
 # 1) Install PyTorch for your hardware
 # Apple Silicon (MPS):
-python -m pip install torch torchvision torchaudio
+python -m pip install torch
 
 # CPU-only (Linux/Windows/macOS):
-# python -m pip install torch torchvision torchaudio
+# python -m pip install torch
 
 # NVIDIA CUDA 12.1:
 # python -m pip install --index-url https://download.pytorch.org/whl/cu121 \
-#   torch torchvision torchaudio
+#   torch
 
 # 2) Install PSALM
 python -m pip install --index-url https://test.pypi.org/simple/ \
