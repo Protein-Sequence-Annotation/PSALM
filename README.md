@@ -1,8 +1,3 @@
-## **Important: PSALM is being heavily revamped**
-This repository is under active refactor. For the previous stable codebase, see
-https://github.com/Protein-Sequence-Annotation/PSALM-copy and release 1.13 or
-previous.
-
 
 
 ```
