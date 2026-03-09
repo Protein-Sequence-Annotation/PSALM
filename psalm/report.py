@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable, List, Tuple
 
-import pandas as pd
-
 from psalm.terminal_ui import TERMINAL_WIDTH, ellipsize, frame_top, kv_line, result_bottom, section_header
 
 
@@ -33,6 +31,14 @@ def capitalize_status(status: str) -> str:
     if not status:
         return status
     return status[:1].upper() + status[1:]
+
+
+def format_evalue(value: float) -> str:
+    return f"{value:.1e}"
+
+
+def format_score(value: float) -> str:
+    return f"{value:.3f}"
 
 
 def build_hit_rows(
@@ -67,23 +73,22 @@ def build_hit_rows(
 
 
 def write_hits_tsv(path: str, hit_rows: List[HitRow]) -> None:
-    df = pd.DataFrame(
-        [
-            {
-                "Sequence": row.sequence,
-                "E-value": row.evalue,
-                "Score": row.score,
-                "Pfam": row.pfam,
-                "Start": row.start,
-                "Stop": row.stop,
-                "Model": row.model,
-                "Len Frac": row.len_frac,
-                "Status": row.status,
-            }
-            for row in hit_rows
-        ]
-    )
-    df.to_csv(path, sep="\t", index=False)
+    header = ["Sequence", "E-value", "Score", "Pfam", "Start", "Stop", "Model", "Len Frac", "Status"]
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write("\t".join(header) + "\n")
+        for row in hit_rows:
+            values = [
+                row.sequence,
+                format_evalue(row.evalue),
+                format_score(row.score),
+                row.pfam,
+                str(row.start),
+                str(row.stop),
+                row.model,
+                str(row.len_frac),
+                row.status,
+            ]
+            handle.write("\t".join(values) + "\n")
 
 
 def render_scan_output(
@@ -111,9 +116,6 @@ def render_scan_output(
     psalm_version: str,
     label_mapping: dict,
 ) -> None:
-    def _fmt_evalue(value: float) -> str:
-        return f"{value:.1e}"
-
     stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     print(frame_top())
@@ -122,7 +124,7 @@ def render_scan_output(
     print(kv_line("Length", f"{len(sequence)} aa"))
     print(kv_line("Families", f"{kept_families}/{total_fams} families passed"))
     print(kv_line("Score Filter", f">={score_thresh:.2f}: {score_pass}/{total_domains_raw} domains passed"))
-    print(kv_line("E-value Filter", f"<={_fmt_evalue(evalue_thresh)}: {len(hit_rows)}/{score_pass} domains passed"))
+    print(kv_line("E-value Filter", f"<={format_evalue(evalue_thresh)}: {len(hit_rows)}/{score_pass} domains passed"))
     print(kv_line("Hits", f"{len(hit_rows)} domains"))
     print()
 
@@ -144,7 +146,7 @@ def render_scan_output(
         print("(no domains passed score/E-value filters)")
     for row in hit_rows:
         print(
-            f"{_fmt_evalue(row.evalue):>{ev_w}}  {row.score:>{score_w}.3f}  {row.pfam:<{pfam_w}}  "
+            f"{format_evalue(row.evalue):>{ev_w}}  {format_score(row.score):>{score_w}}  {row.pfam:<{pfam_w}}  "
             f"{row.start:>{start_w}}  {row.stop:>{stop_w}}  {ellipsize(row.model, model_w):<{model_w}}  "
             f"{row.len_frac:>{len_w}.2f}"
         )
@@ -194,7 +196,7 @@ def render_scan_output(
 
             for row in rows:
                 print(
-                    f"{_fmt_evalue(row.evalue):>12}  {row.score:>5.3f}  {row.start:>5}  {row.stop:>5}  "
+                    f"{format_evalue(row.evalue):>12}  {format_score(row.score):>5}  {row.start:>5}  {row.stop:>5}  "
                     f"{row.len_frac:>8.2f}  {ellipsize(row.status, 32)}"
                 )
             print()

@@ -22,6 +22,7 @@ Persistent session mode (load model once, scan many times):
 psalm -d auto
 # inside shell:
 #   scan -f path/to/seqs.fa
+#   scan --fast --sort -f path/to/seqs.fa -c 4 --to-tsv hits.tsv
 #   scan -s "MSTNPKPQR..."
 #   quit
 ```
@@ -34,22 +35,53 @@ psalm-scan -f path/to/your_sequence.fasta
 CLI behavior notes:
 - Default model: `ProteinSequenceAnnotation/PSALM-2`
 - Default device: `auto` (`cuda` -> `mps` -> `cpu`)
-- `--quiet` suppresses scan result output only; startup/status still prints
+- `--fast` runs batched FASTA scanning and is most useful for multi-sequence FASTA input
+- `-c/--cpu-workers` controls fast-mode CPU decode helpers
+  - if omitted for a one-shot fast scan, decoding stays in the main process
+  - if the interactive shell was started with `-c`, later fast scans reuse that warmed worker pool
+- `-q/--quiet` suppresses scan result output only; startup/status still prints
 - `--to-tsv` and `--to-txt` work for single or multi-sequence FASTA
 - `-v/--verbose` enables detailed alignment and model tables
+  - without `-v`, PSALM prints the compact HITS report
 - `-E` keeps domains with `E-value <= threshold` (default: `0.01`)
 - `-Z` sets dataset size for E-value scaling
   - if omitted for `-s`: `Z=1`
   - if omitted for `-f`: `Z=#sequences in FASTA`
-- E-value values are computed from a packaged empirical negative-score interpolation curve
-- HITS table is sorted by increasing `E-value`
-- HITS and per-family tables show `Len Frac`
 - `--to-tsv` is the supported machine-readable output format
-- Model lookup order:
-  1) explicit local path
-  2) `models/<model_name>` under repository
-  3) Hugging Face cache
-  4) Hugging Face download (first run)
+
+
+Common shell usage:
+```
+psalm
+```
+
+Fast shell usage with workers pre-warmed at startup:
+```
+psalm -c 4
+# inside shell
+scan --fast --sort -f path/to/seqs.fa --to-tsv hits.tsv
+```
+
+Fast shell usage without pre-warming:
+```
+psalm -d auto
+# inside shell
+scan --fast --sort -f path/to/seqs.fa -c 4 --to-tsv hits.tsv
+```
+
+Useful output modes:
+```
+# compact terminal report + TSV
+scan -f path/to/seqs.fa --to-tsv hits.tsv
+
+# fast mode with TSV only
+scan -q --fast --sort -f path/to/seqs.fa --to-tsv hits.tsv
+
+# verbose per-domain output
+scan -v -f path/to/seqs.fa
+```
+
+For the full option set, run `psalm --help`, `psalm-scan --help`, or `scan --help`.
 
 ## Installation
 
@@ -73,7 +105,7 @@ python -m pip install torch
 # 2) Install PSALM
 python -m pip install --index-url https://test.pypi.org/simple/ \
   --extra-index-url https://pypi.org/simple \
-  protein-sequence-annotation==2.1.2
+  protein-sequence-annotation==2.1.3
 ```
 
 If you are unsure which PyTorch command matches your GPU/driver, use the official selector:

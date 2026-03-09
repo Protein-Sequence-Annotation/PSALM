@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import warnings
+from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, version as pkg_version
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
@@ -16,13 +17,21 @@ import torch
 import torch.nn as nn
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+
+if "TRANSFORMERS_CACHE" in os.environ:
+    cache_path = Path(os.environ["TRANSFORMERS_CACHE"]).expanduser()
+    if "HF_HOME" not in os.environ:
+        hf_home = cache_path.parent if cache_path.name == "transformers" else cache_path
+        os.environ["HF_HOME"] = str(hf_home)
+    os.environ.pop("TRANSFORMERS_CACHE", None)
+
 from transformers import AutoConfig, AutoTokenizer
 
 from psalm.config import get_model_config
 from psalm.inference.cbm_score import add_cbm_scores
 from psalm.inference.decoder import annotate_domains
 from psalm.inference.evalue import EValueCurve, load_default_curve
-from psalm.report import HitRow, build_hit_rows, render_scan_output, write_hits_tsv
+from psalm.report import DomainTuple, HitRow, build_hit_rows, render_scan_output, write_hits_tsv
 
 
 def _auto_device() -> torch.device:
@@ -344,12 +353,40 @@ def _load_fasta_records_checked(fasta: str) -> List[SeqRecord]:
     if not fasta_path.is_file():
         raise ValueError(f"FASTA path is not a file: {fasta}")
     try:
-        records = list(SeqIO.parse(str(fasta_path), "fasta"))
+        with fasta_path.open("r", encoding="utf-8") as handle:
+            records = list(SeqIO.parse(handle, "fasta"))
     except Exception as exc:
         raise ValueError(f"Could not parse FASTA file: {fasta}") from exc
     if not records:
         raise ValueError(f"FASTA file is empty or contains no sequences: {fasta}")
     return records
+
+
+@dataclass
+class _PreparedDecodeInputs:
+    total_fams: int
+    kept_families: int
+    keep_full_cpu: torch.Tensor
+    sub_emits_cpu: Optional[torch.Tensor]
+    none_sub: Optional[int]
+
+
+@dataclass
+class _DecodedDomains:
+    domains: List[DomainTuple]
+    domains_original: List[DomainTuple]
+    gamma: Optional[torch.Tensor]
+    best_path: Optional[np.ndarray]
+    dec_dt: float
+
+
+@dataclass
+class _FinalizedScanResult:
+    domains_scored: List[DomainTuple]
+    domains_original_scored: List[DomainTuple]
+    hit_rows: List[HitRow]
+    score_pass: int
+    total_domains_raw: int
 
 
 class PSALM(nn.Module):
@@ -578,6 +615,7 @@ class PSALM(nn.Module):
         sequences: List[str],
         max_batch_size: Optional[int] = None,
     ) -> torch.Tensor:
+        _ = max_batch_size
         device = next(self.parameters()).device
         self.eval()
         toks = self.tokenizer(
@@ -627,7 +665,7 @@ class PSALM(nn.Module):
 
     def _domain_evalue(
         self,
-        domain: Tuple[str, int, int, float, float, float, float, str],
+        domain: DomainTuple,
         dataset_size: float,
     ) -> float:
         if self.evalue_curve is None:
@@ -637,7 +675,7 @@ class PSALM(nn.Module):
     def _build_hit_rows(
         self,
         seq_id: str,
-        domains: List[Tuple[str, int, int, float, float, float, float, str]],
+        domains: List[DomainTuple],
         dataset_size: float,
     ) -> List[HitRow]:
         return build_hit_rows(
@@ -697,6 +735,184 @@ class PSALM(nn.Module):
             label_mapping=self.label_mapping,
         )
 
+    def _ensure_scan_ready(self) -> None:
+        if any(
+            not hasattr(self, attr)
+            for attr in ("inverse_label_mapping", "role_map", "none_label")
+        ):
+            raise RuntimeError("Decoder resources not initialized in this model.")
+        if self.cbm_model is None:
+            raise RuntimeError("CBM model not loaded; score.cbm is required for scan().")
+
+    def _prepare_decode_inputs(self, log_probs: torch.Tensor) -> _PreparedDecodeInputs:
+        device = log_probs.device
+        total_fams = int((log_probs.size(1) - 1) / 3)
+        _length, classes = log_probs.shape
+        top_idx = log_probs.argmax(dim=1)
+        pos_fams = ((top_idx + 2) // 3) * 3
+        pfam_ids = ((torch.arange(classes, device=device) + 2) // 3) * 3
+
+        keep_full = (pfam_ids.unsqueeze(0) == pos_fams.unsqueeze(1)).any(dim=0)
+        keep_full[self.none_label] = True
+        keep_full_cpu = keep_full.cpu().contiguous()
+
+        total_kept = int(keep_full_cpu.sum().item())
+        kept_families = max(0, (total_kept - 1) // 3)
+
+        sub_idx = torch.where(keep_full)[0]
+        if sub_idx.numel() <= 1 and bool((sub_idx == self.none_label).all()):
+            return _PreparedDecodeInputs(
+                total_fams=total_fams,
+                kept_families=kept_families,
+                keep_full_cpu=keep_full_cpu,
+                sub_emits_cpu=None,
+                none_sub=None,
+            )
+
+        sub_emits = log_probs.index_select(1, sub_idx)
+        probs = sub_emits.exp()
+        row_sum = probs.sum(dim=1, keepdim=True)
+        probs = probs / row_sum
+
+        none_sub = int((sub_idx == self.none_label).nonzero(as_tuple=False).item())
+        sub_emits_cpu = probs.clamp_min(1e-40).log().to(dtype=torch.float32).cpu().contiguous()
+        return _PreparedDecodeInputs(
+            total_fams=total_fams,
+            kept_families=kept_families,
+            keep_full_cpu=keep_full_cpu,
+            sub_emits_cpu=sub_emits_cpu,
+            none_sub=none_sub,
+        )
+
+    def _decode_prepared_inputs(
+        self,
+        *,
+        prepared: _PreparedDecodeInputs,
+        sequence: str,
+        beam_size: int,
+        prior_mid_to_start: float,
+        prior_stop_to_mid: float,
+        prior_stop_to_start: float,
+        refine_extended: bool,
+        include_verbose_artifacts: bool,
+    ) -> _DecodedDomains:
+        if prepared.sub_emits_cpu is None or prepared.none_sub is None:
+            return _DecodedDomains(
+                domains=[],
+                domains_original=[],
+                gamma=None,
+                best_path=None,
+                dec_dt=0.0,
+            )
+
+        t0 = time.time()
+        domains_original, domains, best_path, _, _, _ = annotate_domains(
+            prepared.sub_emits_cpu,
+            prepared.keep_full_cpu,
+            sequence,
+            self.inverse_label_mapping,
+            self.label_mapping,
+            self.from_list,
+            self.to_list,
+            self.lp_list,
+            self.role_map,
+            self.state_pfam_ids_full,
+            self.state_role_ids_full,
+            self.id_to_pfam,
+            prepared.none_sub,
+            beam_size=beam_size,
+            prior_mid_to_start=prior_mid_to_start,
+            prior_stop_to_mid=prior_stop_to_mid,
+            prior_stop_to_start=prior_stop_to_start,
+            refine_extended=refine_extended,
+        )
+        dec_dt = time.time() - t0
+        if include_verbose_artifacts:
+            gamma = prepared.sub_emits_cpu.exp()
+            return _DecodedDomains(
+                domains=domains,
+                domains_original=domains_original,
+                gamma=gamma,
+                best_path=best_path,
+                dec_dt=dec_dt,
+            )
+        return _DecodedDomains(
+            domains=domains,
+            domains_original=[],
+            gamma=None,
+            best_path=None,
+            dec_dt=dec_dt,
+        )
+
+    def _finalize_scan_result(
+        self,
+        *,
+        seq_id: str,
+        decoded: _DecodedDomains,
+        dataset_size: float,
+        score_thresh: float,
+        evalue_thresh: float,
+        include_verbose_artifacts: bool,
+    ) -> _FinalizedScanResult:
+        domains_original_scored: List[DomainTuple] = []
+        if include_verbose_artifacts and decoded.domains_original:
+            domains_original_scored = add_cbm_scores(decoded.domains_original, self.cbm_model)
+
+        domains_scored = add_cbm_scores(decoded.domains, self.cbm_model) if decoded.domains else []
+        total_domains_raw = len(domains_scored)
+        score_filtered = [domain for domain in domains_scored if domain[3] >= score_thresh]
+        score_pass = len(score_filtered)
+        evalue_filtered = [
+            domain
+            for domain in score_filtered
+            if self._domain_evalue(domain, dataset_size) <= evalue_thresh
+        ]
+        hit_rows = self._build_hit_rows(seq_id, evalue_filtered, dataset_size)
+        return _FinalizedScanResult(
+            domains_scored=evalue_filtered,
+            domains_original_scored=domains_original_scored,
+            hit_rows=hit_rows,
+            score_pass=score_pass,
+            total_domains_raw=total_domains_raw,
+        )
+
+    def _build_scan_result_from_log_probs(
+        self,
+        *,
+        seq_id: str,
+        sequence: str,
+        log_probs: torch.Tensor,
+        score_thresh: float,
+        beam_size: int,
+        dataset_size: float,
+        evalue_thresh: float,
+        prior_mid_to_start: float,
+        prior_stop_to_mid: float,
+        prior_stop_to_start: float,
+        refine_extended: bool,
+        include_verbose_artifacts: bool,
+    ) -> Tuple[_PreparedDecodeInputs, _DecodedDomains, _FinalizedScanResult]:
+        prepared = self._prepare_decode_inputs(log_probs)
+        decoded = self._decode_prepared_inputs(
+            prepared=prepared,
+            sequence=sequence,
+            beam_size=beam_size,
+            prior_mid_to_start=prior_mid_to_start,
+            prior_stop_to_mid=prior_stop_to_mid,
+            prior_stop_to_start=prior_stop_to_start,
+            refine_extended=refine_extended,
+            include_verbose_artifacts=include_verbose_artifacts,
+        )
+        finalized = self._finalize_scan_result(
+            seq_id=seq_id,
+            decoded=decoded,
+            dataset_size=dataset_size,
+            score_thresh=score_thresh,
+            evalue_thresh=evalue_thresh,
+            include_verbose_artifacts=include_verbose_artifacts,
+        )
+        return prepared, decoded, finalized
+
     def _scan_one(
         self,
         sequence: str,
@@ -712,118 +928,51 @@ class PSALM(nn.Module):
         refine_extended: bool,
         verbose: bool,
         print_output: bool,
-    ) -> List[Tuple[str, int, int, float, float, float, float, str]]:
-        if any(
-            not hasattr(self, attr)
-            for attr in ("inverse_label_mapping", "role_map", "none_label")
-        ):
-            raise RuntimeError("Decoder resources not initialized in this model.")
-        if self.cbm_model is None:
-            raise RuntimeError("CBM model not loaded; score.cbm is required for scan().")
+    ) -> List[DomainTuple]:
+        self._ensure_scan_ready()
 
         t0 = time.time()
         logits = self.infer(sequence)
-        device = logits.device
         if T > 0.0:
             logits = logits / T
         log_probs = torch.log_softmax(logits, dim=-1)
         inf_dt = time.time() - t0
-        total_fams = int((log_probs.size(1) - 1) / 3)
-
-        L, C = log_probs.shape
-        top_idx = log_probs.argmax(dim=1)
-        pos_fams = ((top_idx + 2) // 3) * 3
-        pfam_ids = ((torch.arange(C, device=device) + 2) // 3) * 3
-
-        keep_full = (pfam_ids.unsqueeze(0) == pos_fams.unsqueeze(1)).any(dim=0)
-        keep_full[self.none_label] = True
-        keep_full_cpu = keep_full.cpu().contiguous()
-
-        total_kept = int(keep_full_cpu.sum().item())
-        K = (total_kept - 1) // 3
-
-        domains_original_scored: List[Tuple[str, int, int, float, float, float, float, str]] = []
-        domains_scored: List[Tuple[str, int, int, float, float, float, float, str]] = []
-        best_path = None
-        gamma = None
-        dec_dt = 0.0
-        total_domains_raw = 0
-        score_pass = 0
-
-        sub_idx = torch.where(keep_full)[0]
-        if not (sub_idx.numel() <= 1 and (sub_idx == self.none_label).all()):
-            sub_emits = log_probs.index_select(1, sub_idx)
-            probs = sub_emits.exp()
-            row_sum = probs.sum(dim=1, keepdim=True)
-            probs = probs / row_sum
-
-            none_sub = int((sub_idx == self.none_label).nonzero(as_tuple=False).item())
-            sub_emits_cpu = probs.clamp_min(1e-40).log().to(dtype=torch.float32).cpu().contiguous()
-
-            t1 = time.time()
-            domains_original, domains, best_path, _, _, _ = annotate_domains(
-                sub_emits_cpu,
-                keep_full_cpu,
-                sequence,
-                self.inverse_label_mapping,
-                self.label_mapping,
-                self.from_list,
-                self.to_list,
-                self.lp_list,
-                self.role_map,
-                self.state_pfam_ids_full,
-                self.state_role_ids_full,
-                self.id_to_pfam,
-                none_sub,
-                beam_size=beam_size,
-                prior_mid_to_start=prior_mid_to_start,
-                prior_stop_to_mid=prior_stop_to_mid,
-                prior_stop_to_start=prior_stop_to_start,
-                refine_extended=refine_extended,
-            )
-            dec_dt = time.time() - t1
-            gamma = probs
-
-            domains_original_scored = add_cbm_scores(domains_original, self.cbm_model)
-            domains_scored = add_cbm_scores(domains, self.cbm_model)
-
-            total_domains_raw = len(domains_scored)
-            score_filtered = []
-            for pfam, start, stop, cbm_score, bit_score, len_ratio, bias, status in domains_scored:
-                if cbm_score >= score_thresh:
-                    score_filtered.append((pfam, start, stop, cbm_score, bit_score, len_ratio, bias, status))
-            score_pass = len(score_filtered)
-
-            evalue_filtered = []
-            for domain in score_filtered:
-                evalue = self._domain_evalue(domain, dataset_size)
-                if evalue <= evalue_thresh:
-                    evalue_filtered.append(domain)
-            domains_scored = evalue_filtered
-
-        hit_rows = self._build_hit_rows(seq_id, domains_scored, dataset_size)
+        prepared, decoded, finalized = self._build_scan_result_from_log_probs(
+            seq_id=seq_id,
+            sequence=sequence,
+            log_probs=log_probs,
+            score_thresh=score_thresh,
+            beam_size=beam_size,
+            dataset_size=dataset_size,
+            evalue_thresh=evalue_thresh,
+            prior_mid_to_start=prior_mid_to_start,
+            prior_stop_to_mid=prior_stop_to_mid,
+            prior_stop_to_start=prior_stop_to_start,
+            refine_extended=refine_extended,
+            include_verbose_artifacts=verbose,
+        )
         if print_output:
             self._render_scan_output(
                 sequence=sequence,
                 seq_id=seq_id,
-                hit_rows=hit_rows,
+                hit_rows=finalized.hit_rows,
                 score_thresh=score_thresh,
                 evalue_thresh=evalue_thresh,
-                score_pass=score_pass,
-                total_domains_raw=total_domains_raw,
-                total_fams=total_fams,
-                kept_families=K,
-                domains_original_scored=domains_original_scored,
-                gamma=gamma,
-                best_path=best_path,
+                score_pass=finalized.score_pass,
+                total_domains_raw=finalized.total_domains_raw,
+                total_fams=prepared.total_fams,
+                kept_families=prepared.kept_families,
+                domains_original_scored=finalized.domains_original_scored,
+                gamma=decoded.gamma,
+                best_path=decoded.best_path,
                 verbose=verbose,
                 refine_extended=refine_extended,
                 beam_size=beam_size,
                 inf_dt=inf_dt,
-                dec_dt=dec_dt,
+                dec_dt=decoded.dec_dt,
             )
 
-        return domains_scored
+        return finalized.domains_scored
 
     def scan(
         self,
@@ -1031,6 +1180,59 @@ class PSALM(nn.Module):
             self._write_hits_tsv(to_tsv, self._build_hit_rows(seq_id, domains_scored, effective_dataset_size))
 
         return {seq_id: domains_scored}
+
+    def scan_fast(
+        self,
+        *,
+        fasta: str,
+        score_thresh: float = 0.0,
+        beam_size: int = 64,
+        dataset_size: Optional[float] = None,
+        evalue_thresh: float = 0.01,
+        prior_mid_to_start: float = 3.4e-5,
+        prior_stop_to_mid: float = 4.817e-3,
+        prior_stop_to_start: float = 5.540e-3,
+        refine_extended: bool = True,
+        to_tsv: Optional[str] = None,
+        to_txt: Optional[str] = None,
+        sort: bool = False,
+        cpu_workers: Optional[int] = None,
+        max_tokens_per_batch: int = 8192,
+        max_queued_seqs: Optional[int] = None,
+        _print_output: bool = True,
+    ) -> Dict[str, List[DomainTuple]]:
+        from psalm.fast_scan import FastWorkerPoolManager, scan_fasta_fast
+
+        worker_pool_manager = getattr(self, "_fast_worker_pool_manager", None)
+        if (
+            worker_pool_manager is None
+            and getattr(self, "_fast_shell_mode", False)
+            and (cpu_workers is None or cpu_workers > 0)
+        ):
+            worker_pool_manager = FastWorkerPoolManager(self)
+            self._fast_worker_pool_manager = worker_pool_manager
+
+        return scan_fasta_fast(
+            self,
+            fasta=fasta,
+            score_thresh=score_thresh,
+            beam_size=beam_size,
+            dataset_size=dataset_size,
+            evalue_thresh=evalue_thresh,
+            prior_mid_to_start=prior_mid_to_start,
+            prior_stop_to_mid=prior_stop_to_mid,
+            prior_stop_to_start=prior_stop_to_start,
+            refine_extended=refine_extended,
+            to_tsv=to_tsv,
+            to_txt=to_txt,
+            sort=sort,
+            cpu_workers=cpu_workers,
+            max_tokens_per_batch=max_tokens_per_batch,
+            max_queued_seqs=max_queued_seqs,
+            _print_output=_print_output,
+            _worker_pool_manager=worker_pool_manager,
+            _status_callback=getattr(self, "_fast_worker_status_callback", None),
+        )
 
     def decode_sequence(self, *args, **kwargs) -> Dict[str, List[Tuple[str, int, int, float, float, float, float, str]]]:
         warnings.warn(

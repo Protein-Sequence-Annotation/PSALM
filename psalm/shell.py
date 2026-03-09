@@ -17,7 +17,9 @@ from psalm.cli import (
     build_scan_parser,
     load_model_with_startup,
     run_scan_from_args,
+    validate_scan_args,
 )
+from psalm.fast_scan import FastWorkerPoolManager
 
 
 HISTORY_LIMIT = 100
@@ -31,6 +33,16 @@ def _build_main_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-m", "--model-name", default=DEFAULT_MODEL_NAME)
     parser.add_argument("-d", "--device", default="auto")
+    parser.add_argument(
+        "-c",
+        "--cpu-workers",
+        type=int,
+        default=None,
+        help=(
+            "Pre-create and warm this many persistent fast decode workers for the shell. "
+            "If omitted, no fast worker pool is created until a later `scan --fast ... -c/--cpu-workers` request."
+        ),
+    )
     parser.add_argument(
         "--version",
         action="version",
@@ -76,6 +88,10 @@ def _remember_command(raw: str) -> None:
         readline.remove_history_item(0)
 
 
+def _shell_status_callback(msg: str) -> None:
+    print(f"   {msg}", flush=True)
+
+
 def main() -> None:
     parser = _build_main_parser()
     if len(sys.argv) > 1 and sys.argv[1] == "help":
@@ -83,6 +99,9 @@ def main() -> None:
         return
     args = parser.parse_args()
     _configure_history()
+    if args.cpu_workers is not None and args.cpu_workers < 0:
+        print("startup error: --cpu-workers must be >= 0")
+        return
 
     try:
         model = load_model_with_startup(
@@ -96,57 +115,78 @@ def main() -> None:
         print(f"startup error: {exc}")
         return
 
-    scan_parser = build_scan_parser(prog="scan", add_help=True, exit_on_error=False)
-    while True:
+    pool_manager = None
+    model._fast_shell_mode = True
+    model._fast_worker_status_callback = _shell_status_callback
+    if args.cpu_workers is not None:
         try:
-            raw = input(">>PSALM>> ")
-        except EOFError:
-            print()
-            break
-        except KeyboardInterrupt:
-            print()
-            continue
-
-        raw = raw.strip()
-        if not raw:
-            continue
-        _remember_command(raw)
-        if raw in {"quit", "exit"}:
-            break
-        if raw == "help":
-            _print_shell_help()
-            continue
-        if not raw.startswith("scan"):
-            print("Unknown command. Use: scan/help/quit")
-            continue
-
-        try:
-            tokens = shlex.split(raw)
-        except ValueError as exc:
-            print(f"scan error: {exc}")
-            continue
-        if any(token in {"-h", "--help"} for token in tokens[1:]):
-            scan_parser.print_help()
-            continue
-
-        try:
-            scan_args = scan_parser.parse_args(tokens[1:])
-        except argparse.ArgumentError as exc:
-            print(f"scan error: {exc}")
-            continue
-        except SystemExit:
-            print("scan error: invalid arguments")
-            continue
-        if (scan_args.sequence is None) == (scan_args.fasta is None):
-            print("scan error: provide exactly one of -s or -f")
-            continue
-
-        try:
-            run_scan_from_args(model, scan_args)
-        except KeyboardInterrupt:
-            print("\nscan cancelled")
+            pool_manager = FastWorkerPoolManager(model)
+            pool_manager.ensure_size(args.cpu_workers, status_callback=_shell_status_callback)
+            model._fast_worker_pool_manager = pool_manager
         except Exception as exc:
-            print(f"scan error: {exc}")
+            print(f"startup error: {exc}")
+            if pool_manager is not None:
+                pool_manager.close()
+            return
+
+    scan_parser = build_scan_parser(prog="scan", add_help=True, exit_on_error=False)
+    try:
+        while True:
+            try:
+                raw = input(">>PSALM>> ")
+            except EOFError:
+                print()
+                break
+            except KeyboardInterrupt:
+                print()
+                continue
+
+            raw = raw.strip()
+            if not raw:
+                continue
+            _remember_command(raw)
+            if raw in {"quit", "exit"}:
+                break
+            if raw == "help":
+                _print_shell_help()
+                continue
+            if not raw.startswith("scan"):
+                print("Unknown command. Use: scan/help/quit")
+                continue
+
+            try:
+                tokens = shlex.split(raw)
+            except ValueError as exc:
+                print(f"scan error: {exc}")
+                continue
+            if any(token in {"-h", "--help"} for token in tokens[1:]):
+                scan_parser.print_help()
+                continue
+
+            try:
+                scan_args = scan_parser.parse_args(tokens[1:])
+            except argparse.ArgumentError as exc:
+                print(f"scan error: {exc}")
+                continue
+            except SystemExit:
+                print("scan error: invalid arguments")
+                continue
+            try:
+                validate_scan_args(scan_args)
+            except ValueError as exc:
+                print(f"scan error: {exc}")
+                continue
+
+            try:
+                run_scan_from_args(model, scan_args)
+            except KeyboardInterrupt:
+                print("\nscan cancelled")
+            except Exception as exc:
+                print(f"scan error: {exc}")
+    finally:
+        manager = getattr(model, "_fast_worker_pool_manager", None)
+        if manager is not None:
+            manager.close()
 
 
 if __name__ == "__main__":

@@ -139,7 +139,79 @@ def add_scan_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentPars
         dest="quiet",
         help="Suppress scan result output in the terminal. Startup and status messages still print.",
     )
+
+    fast_group = parser.add_argument_group("fast scan")
+    fast_group.add_argument(
+        "--fast",
+        action="store_true",
+        help="Enable batched FASTA scanning with CPU decode helpers.",
+    )
+    fast_group.add_argument(
+        "--sort",
+        action="store_true",
+        help="Sort FASTA sequences from longest to shortest before fast-mode batching.",
+    )
+    fast_group.add_argument(
+        "-c",
+        "--cpu-workers",
+        type=int,
+        default=None,
+        metavar="N",
+        help=(
+            "Target number of CPU decode helpers for --fast. "
+            "If omitted, fast mode decodes in the main process unless the shell already has a warmed worker pool. "
+            "Use 0 to force main-process decode."
+        ),
+    )
+    fast_group.add_argument(
+        "--max-tokens-per-batch",
+        type=int,
+        default=8192,
+        metavar="TOKENS",
+        help="Pad-aware token budget for each embedding batch in --fast mode.",
+    )
+    fast_group.add_argument(
+        "--max-queued-seqs",
+        type=int,
+        default=None,
+        metavar="N",
+        help=(
+            "Pause embedding when more than N sequences are queued for CPU decode. "
+            "Defaults to 10x CPU workers."
+        ),
+    )
     return parser
+
+
+def validate_scan_args(args: argparse.Namespace, parser: Optional[argparse.ArgumentParser] = None) -> None:
+    def _fail(message: str) -> None:
+        if parser is not None:
+            parser.error(message)
+        raise ValueError(message)
+
+    if args.sequence is None and args.fasta is None:
+        _fail("No input provided. Try `psalm-scan -h` for usage and examples.")
+    if args.sequence is not None and args.fasta is not None:
+        _fail(
+            "Provide exactly one of -s or -f (not both). "
+            "Try `psalm-scan -h` for usage and examples."
+        )
+    if args.fast and args.sequence is not None:
+        _fail("`--fast` requires `-f/--fasta` input and does not support `-s/--sequence`.")
+    if args.fast and args.verbose:
+        _fail("`--fast` matches the non-verbose report only. Omit `-v/--verbose`.")
+    if args.cpu_workers is not None and args.cpu_workers < 0:
+        _fail("`--cpu-workers` must be >= 0.")
+    if not args.fast and args.sort:
+        _fail("`--sort` is only available with `--fast`.")
+    if not args.fast and args.cpu_workers is not None:
+        _fail("`--cpu-workers` is only available with `--fast`.")
+    if not args.fast and args.max_tokens_per_batch != 8192:
+        _fail("`--max-tokens-per-batch` is only available with `--fast`.")
+    if args.max_queued_seqs is not None and args.max_queued_seqs <= 0:
+        _fail("`--max-queued-seqs` must be > 0.")
+    if not args.fast and args.max_queued_seqs is not None:
+        _fail("`--max-queued-seqs` is only available with `--fast`.")
 
 
 def build_scan_parser(
@@ -159,7 +231,9 @@ def build_scan_parser(
             "Examples:\n"
             "  scan -s MSTNPKPQRIT...\n"
             "  scan -f path/to/proteins.fa\n"
+            "  scan --fast --sort -f path/to/proteins.fa -c 4 --max-queued-seqs 40\n"
             "  scan -f path/to/proteins.fa -E 1e-3 -v\n"
+            "  scan -q --fast -f path/to/proteins.fa --to-tsv hits.tsv\n"
             "  scan -f path/to/proteins.fa --to-tsv hits.tsv --to-txt report.txt\n"
             "  scan -f path/to/proteins.fa -T 0.20 -b 128"
         ),
@@ -225,6 +299,22 @@ def load_model_with_startup(*, model_name: str, device: str) -> PSALM:
 
 
 def run_scan_from_args(model: PSALM, args: argparse.Namespace):
+    if args.fast:
+        return model.scan_fast(
+            fasta=args.fasta,
+            score_thresh=args.score_thresh,
+            beam_size=args.beam_size,
+            dataset_size=args.dataset_size,
+            evalue_thresh=args.evalue_thresh,
+            refine_extended=(not args.no_refine),
+            to_tsv=args.to_tsv,
+            to_txt=args.to_txt,
+            sort=args.sort,
+            cpu_workers=args.cpu_workers,
+            max_tokens_per_batch=args.max_tokens_per_batch,
+            max_queued_seqs=args.max_queued_seqs,
+            _print_output=(not args.quiet),
+        )
     return model.scan(
         sequence=args.sequence,
         fasta=args.fasta,
@@ -252,7 +342,9 @@ def build_parser() -> argparse.ArgumentParser:
             "  psalm-scan -v -f Q09870.fa --to-tsv out.tsv\n"
             "  psalm-scan -q --no-refine -f Q09870.fa\n"
             "  psalm-scan -f Q09870.fa -E 1e-3 -T 0.20\n"
+            "  psalm-scan --fast --sort -f proteins.fa -c 4 --max-queued-seqs 40\n"
             "  psalm -d auto\n"
+            "  psalm -d auto -c 4\n"
             "  psalm help"
         ),
         formatter_class=_HelpFormatter,
@@ -281,14 +373,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
-
-    if args.sequence is None and args.fasta is None:
-        parser.error("No input provided. Try `psalm-scan -h` for usage and examples.")
-    if args.sequence is not None and args.fasta is not None:
-        parser.error(
-            "Provide exactly one of -s or -f (not both). "
-            "Try `psalm-scan -h` for usage and examples."
-        )
+    validate_scan_args(args, parser)
 
     model = load_model_with_startup(
         model_name=args.model_name,
