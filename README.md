@@ -60,20 +60,7 @@ CLI behavior notes:
 Common shell usage:
 ```
 psalm
-```
-
-Fast shell usage with workers pre-warmed at startup:
-```
-psalm -c 4
-# inside shell
 scan --sort -f path/to/seqs.fa --to-tsv hits.tsv
-```
-
-Fast shell usage without pre-warming:
-```
-psalm -d auto
-# inside shell
-scan --sort -f path/to/seqs.fa -c 4 --to-tsv hits.tsv
 ```
 
 Useful output modes:
@@ -81,14 +68,11 @@ Useful output modes:
 # compact terminal report + TSV
 scan -f path/to/seqs.fa --to-tsv hits.tsv
 
-# fast mode with TSV only
+# with TSV only
 scan -q --sort -f path/to/seqs.fa --to-tsv hits.tsv
 
 # verbose per-domain output
 scan -v -f path/to/seqs.fa
-
-# explicit legacy serial FASTA mode
-scan --serial -f path/to/seqs.fa
 ```
 
 For the full option set, run `psalm --help`, `psalm-scan --help`, or `scan --help`.
