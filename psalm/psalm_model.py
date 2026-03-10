@@ -10,13 +10,14 @@ import warnings
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, version as pkg_version
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, Iterator, List, Optional, TextIO, Tuple
 
 import numpy as np
 import torch
 import torch.nn as nn
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+from tqdm.auto import tqdm
 
 if "TRANSFORMERS_CACHE" in os.environ:
     cache_path = Path(os.environ["TRANSFORMERS_CACHE"]).expanduser()
@@ -31,7 +32,16 @@ from psalm.config import get_model_config
 from psalm.inference.cbm_score import add_cbm_scores
 from psalm.inference.decoder import annotate_domains
 from psalm.inference.evalue import EValueCurve, load_default_curve
-from psalm.report import DomainTuple, HitRow, build_hit_rows, render_scan_output, write_hits_tsv
+from psalm.report import (
+    DomainTuple,
+    HitRow,
+    build_hit_rows,
+    build_hit_rows_from_evalues,
+    render_scan_output,
+    write_hits_tsv,
+)
+
+SCAN_PROGRESS_BAR_FORMAT = "{percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]"
 
 
 def _auto_device() -> torch.device:
@@ -362,6 +372,35 @@ def _load_fasta_records_checked(fasta: str) -> List[SeqRecord]:
     return records
 
 
+def _iter_fasta_records_checked(fasta: str) -> Iterator[SeqRecord]:
+    fasta_path = Path(fasta).expanduser()
+    if not fasta_path.exists():
+        raise FileNotFoundError(f"FASTA file not found: {fasta}")
+    if not fasta_path.is_file():
+        raise ValueError(f"FASTA path is not a file: {fasta}")
+
+    saw_any = False
+    try:
+        with fasta_path.open("r", encoding="utf-8") as handle:
+            for record in SeqIO.parse(handle, "fasta"):
+                saw_any = True
+                yield record
+    except (FileNotFoundError, ValueError):
+        raise
+    except Exception as exc:
+        raise ValueError(f"Could not parse FASTA file: {fasta}") from exc
+
+    if not saw_any:
+        raise ValueError(f"FASTA file is empty or contains no sequences: {fasta}")
+
+
+def _count_fasta_records_checked(fasta: str) -> int:
+    count = 0
+    for _record in _iter_fasta_records_checked(fasta):
+        count += 1
+    return count
+
+
 @dataclass
 class _PreparedDecodeInputs:
     total_fams: int
@@ -415,6 +454,7 @@ class PSALM(nn.Module):
         self.warmup_executed = False
         self.resolved_device: Optional[torch.device] = None
         self.status_callback = status_callback
+        self._pfam_ids_cache: Dict[Tuple[str, int], torch.Tensor] = {}
 
         if model_name is None:
             cfg = get_model_config()
@@ -709,6 +749,7 @@ class PSALM(nn.Module):
         beam_size: int,
         inf_dt: float,
         dec_dt: float,
+        output: Optional[TextIO] = None,
     ) -> None:
         render_scan_output(
             sequence=sequence,
@@ -733,6 +774,7 @@ class PSALM(nn.Module):
             device_label=str(next(self.parameters()).device),
             psalm_version=_get_psalm_version(),
             label_mapping=self.label_mapping,
+            output=output,
         )
 
     def _ensure_scan_ready(self) -> None:
@@ -750,16 +792,21 @@ class PSALM(nn.Module):
         _length, classes = log_probs.shape
         top_idx = log_probs.argmax(dim=1)
         pos_fams = ((top_idx + 2) // 3) * 3
-        pfam_ids = ((torch.arange(classes, device=device) + 2) // 3) * 3
+        cache_key = (str(device), classes)
+        pfam_ids = self._pfam_ids_cache.get(cache_key)
+        if pfam_ids is None or pfam_ids.device != device:
+            pfam_ids = ((torch.arange(classes, device=device) + 2) // 3) * 3
+            self._pfam_ids_cache[cache_key] = pfam_ids
 
-        keep_full = (pfam_ids.unsqueeze(0) == pos_fams.unsqueeze(1)).any(dim=0)
+        active_fams = pos_fams.unique(sorted=False)
+        keep_full = (pfam_ids.unsqueeze(0) == active_fams.unsqueeze(1)).any(dim=0)
         keep_full[self.none_label] = True
         keep_full_cpu = keep_full.cpu().contiguous()
 
         total_kept = int(keep_full_cpu.sum().item())
         kept_families = max(0, (total_kept - 1) // 3)
 
-        sub_idx = torch.where(keep_full)[0]
+        sub_idx = keep_full.nonzero(as_tuple=False).flatten()
         if sub_idx.numel() <= 1 and bool((sub_idx == self.none_label).all()):
             return _PreparedDecodeInputs(
                 total_fams=total_fams,
@@ -770,12 +817,9 @@ class PSALM(nn.Module):
             )
 
         sub_emits = log_probs.index_select(1, sub_idx)
-        probs = sub_emits.exp()
-        row_sum = probs.sum(dim=1, keepdim=True)
-        probs = probs / row_sum
-
         none_sub = int((sub_idx == self.none_label).nonzero(as_tuple=False).item())
-        sub_emits_cpu = probs.clamp_min(1e-40).log().to(dtype=torch.float32).cpu().contiguous()
+        sub_emits = sub_emits - torch.logsumexp(sub_emits, dim=1, keepdim=True)
+        sub_emits_cpu = sub_emits.to(dtype=torch.float32).cpu().contiguous()
         return _PreparedDecodeInputs(
             total_fams=total_fams,
             kept_families=kept_families,
@@ -862,14 +906,21 @@ class PSALM(nn.Module):
         total_domains_raw = len(domains_scored)
         score_filtered = [domain for domain in domains_scored if domain[3] >= score_thresh]
         score_pass = len(score_filtered)
-        evalue_filtered = [
-            domain
-            for domain in score_filtered
-            if self._domain_evalue(domain, dataset_size) <= evalue_thresh
-        ]
-        hit_rows = self._build_hit_rows(seq_id, evalue_filtered, dataset_size)
+        kept_domains: List[DomainTuple] = []
+        kept_evalues: List[float] = []
+        for domain in score_filtered:
+            evalue = self._domain_evalue(domain, dataset_size)
+            if evalue <= evalue_thresh:
+                kept_domains.append(domain)
+                kept_evalues.append(evalue)
+        hit_rows = build_hit_rows_from_evalues(
+            seq_id=seq_id,
+            domains=kept_domains,
+            evalues=kept_evalues,
+            label_mapping=self.label_mapping,
+        )
         return _FinalizedScanResult(
-            domains_scored=evalue_filtered,
+            domains_scored=kept_domains,
             domains_original_scored=domains_original_scored,
             hit_rows=hit_rows,
             score_pass=score_pass,
@@ -1022,52 +1073,75 @@ class PSALM(nn.Module):
             base, ext = os.path.splitext(path)
             return path if ext else f"{base}{default_ext}"
 
+        def _scan_one_with_optional_capture(active_seq: str, active_seq_id: str) -> tuple[List[DomainTuple], str]:
+            if not emit_printable:
+                return (
+                    self._scan_one(
+                        sequence=active_seq,
+                        seq_id=active_seq_id,
+                        score_thresh=score_thresh,
+                        beam_size=beam_size,
+                        dataset_size=effective_dataset_size,
+                        evalue_thresh=evalue_thresh,
+                        prior_mid_to_start=prior_mid_to_start,
+                        prior_stop_to_mid=prior_stop_to_mid,
+                        prior_stop_to_start=prior_stop_to_start,
+                        T=T,
+                        refine_extended=refine_extended,
+                        verbose=verbose,
+                        print_output=False,
+                    ),
+                    "",
+                )
+
+            buffer = io.StringIO()
+            with contextlib.redirect_stdout(buffer):
+                domains = self._scan_one(
+                    sequence=active_seq,
+                    seq_id=active_seq_id,
+                    score_thresh=score_thresh,
+                    beam_size=beam_size,
+                    dataset_size=effective_dataset_size,
+                    evalue_thresh=evalue_thresh,
+                    prior_mid_to_start=prior_mid_to_start,
+                    prior_stop_to_mid=prior_stop_to_mid,
+                    prior_stop_to_start=prior_stop_to_start,
+                    T=T,
+                    refine_extended=refine_extended,
+                    verbose=verbose,
+                    print_output=True,
+                )
+            return domains, buffer.getvalue()
+
         def _run_with_optional_text_capture(active_seq: str, active_seq_id: str):
-            if emit_text_file and emit_console:
-                buffer = io.StringIO()
-                tee = _TeeIO(sys.stdout, buffer)
-                with contextlib.redirect_stdout(tee):
-                    domains = self._scan_one(
-                        sequence=active_seq,
-                        seq_id=active_seq_id,
-                        score_thresh=score_thresh,
-                        beam_size=beam_size,
-                        dataset_size=effective_dataset_size,
-                        evalue_thresh=evalue_thresh,
-                        prior_mid_to_start=prior_mid_to_start,
-                        prior_stop_to_mid=prior_stop_to_mid,
-                        prior_stop_to_start=prior_stop_to_start,
-                        T=T,
-                        refine_extended=refine_extended,
-                        verbose=verbose,
-                        print_output=emit_printable,
-                    )
+            domains, report_text = _scan_one_with_optional_capture(active_seq, active_seq_id)
+            if emit_console and report_text:
+                sys.stdout.write(report_text)
+                sys.stdout.flush()
+            if emit_text_file:
                 with open(txt_path, "w", encoding="utf-8") as handle:
-                    handle.write(buffer.getvalue())
-                return domains
+                    handle.write(report_text)
+            return domains
 
-            if emit_text_file and not emit_console:
-                buffer = io.StringIO()
-                with contextlib.redirect_stdout(buffer):
-                    domains = self._scan_one(
-                        sequence=active_seq,
-                        seq_id=active_seq_id,
-                        score_thresh=score_thresh,
-                        beam_size=beam_size,
-                        dataset_size=effective_dataset_size,
-                        evalue_thresh=evalue_thresh,
-                        prior_mid_to_start=prior_mid_to_start,
-                        prior_stop_to_mid=prior_stop_to_mid,
-                        prior_stop_to_start=prior_stop_to_start,
-                        T=T,
-                        refine_extended=refine_extended,
-                        verbose=verbose,
-                        print_output=emit_printable,
-                    )
-                with open(txt_path, "w", encoding="utf-8") as handle:
-                    handle.write(buffer.getvalue())
-                return domains
+        def _emit_progress_safe_report(report_text: str, pbar: tqdm) -> None:
+            clean = report_text.rstrip("\n")
+            if clean == "":
+                return
+            if pbar.disable:
+                print(clean + "\n", end="")
+            else:
+                tqdm.write(clean + "\n", end="")
 
+        def _append_report_text(handle, report_text: str, *, wrote_any: bool) -> bool:
+            clean = report_text.rstrip("\n")
+            if clean == "":
+                return wrote_any
+            if wrote_any:
+                handle.write("\n\n")
+            handle.write(clean)
+            return True
+
+        def _run_scan_one_direct(active_seq: str, active_seq_id: str):
             return self._scan_one(
                 sequence=active_seq,
                 seq_id=active_seq_id,
@@ -1081,7 +1155,7 @@ class PSALM(nn.Module):
                 T=T,
                 refine_extended=refine_extended,
                 verbose=verbose,
-                print_output=emit_printable,
+                print_output=False,
             )
 
         if dataset_size is not None and dataset_size <= 0:
@@ -1098,24 +1172,24 @@ class PSALM(nn.Module):
         effective_dataset_size = float(dataset_size) if dataset_size is not None else 1.0
 
         if _seq_id is None and fasta is not None:
-            records = _load_fasta_records_checked(fasta)
+            total_records = _count_fasta_records_checked(fasta)
             if dataset_size is None:
-                effective_dataset_size = float(max(1, len(records)))
-            if len(records) > 1:
+                effective_dataset_size = float(max(1, total_records))
+            if total_records > 1:
                 results: Dict[str, List[Tuple[str, int, int, float, float, float, float, str]]] = {}
                 used_ids: Dict[str, int] = {}
                 unnamed = 0
-                buffer = None
-                output_context = contextlib.nullcontext()
-                if emit_text_file and emit_console:
-                    buffer = io.StringIO()
-                    tee = _TeeIO(sys.stdout, buffer)
-                    output_context = contextlib.redirect_stdout(tee)
-                elif emit_text_file and not emit_console:
-                    buffer = io.StringIO()
-                    output_context = contextlib.redirect_stdout(buffer)
-                with output_context:
-                    for rec in records:
+                pbar = tqdm(
+                    total=total_records,
+                    unit="seq",
+                    ncols=80,
+                    bar_format=SCAN_PROGRESS_BAR_FORMAT,
+                    disable=(total_records <= 1) or (not sys.stderr.isatty()),
+                )
+                txt_handle = open(txt_path, "w", encoding="utf-8") if emit_text_file else None
+                txt_written_any = False
+                try:
+                    for rec in _iter_fasta_records_checked(fasta):
                         rec_id = (rec.id or "").strip()
                         if rec_id == "":
                             unnamed += 1
@@ -1129,29 +1203,27 @@ class PSALM(nn.Module):
                             str(rec.seq),
                             f"sequence '{rec_id}' in FASTA '{fasta}'",
                         )
-                        sub = self.scan(
-                            sequence=record_sequence,
-                            score_thresh=score_thresh,
-                            beam_size=beam_size,
-                            dataset_size=effective_dataset_size,
-                            evalue_thresh=evalue_thresh,
-                            prior_mid_to_start=prior_mid_to_start,
-                            prior_stop_to_mid=prior_stop_to_mid,
-                            prior_stop_to_start=prior_stop_to_start,
-                            T=T,
-                            refine_extended=refine_extended,
-                            to_tsv=None,
-                            to_txt=None,
-                            verbose=verbose,
-                            _seq_id=rec_id,
-                            _print_output=emit_printable,
-                        )
-                        results.update(sub)
                         if emit_printable:
-                            print()
-                if emit_text_file and buffer is not None:
-                    with open(txt_path, "w", encoding="utf-8") as handle:
-                        handle.write(buffer.getvalue())
+                            domains, report_text = _scan_one_with_optional_capture(record_sequence, rec_id)
+                            sub = {rec_id: domains}
+                        else:
+                            sub = {rec_id: _run_scan_one_direct(record_sequence, rec_id)}
+                            report_text = ""
+                        results.update(sub)
+                        pbar.update(1)
+                        if emit_console:
+                            _emit_progress_safe_report(report_text, pbar)
+                        if txt_handle is not None:
+                            txt_written_any = _append_report_text(
+                                txt_handle,
+                                report_text,
+                                wrote_any=txt_written_any,
+                            )
+                finally:
+                    pbar.close()
+                    if txt_handle is not None:
+                        txt_handle.flush()
+                        txt_handle.close()
                 if to_tsv:
                     rows: List[HitRow] = []
                     for seq_id, domains in results.items():
@@ -1160,8 +1232,7 @@ class PSALM(nn.Module):
                 return results
 
         if fasta is not None:
-            records = _load_fasta_records_checked(fasta)
-            rec = records[0]
+            rec = next(_iter_fasta_records_checked(fasta))
             sequence = _normalize_sequence_text(
                 str(rec.seq),
                 f"sequence '{(rec.id or 'seq1').strip() or 'seq1'}' in FASTA '{fasta}'",
@@ -1197,10 +1268,12 @@ class PSALM(nn.Module):
         to_txt: Optional[str] = None,
         sort: bool = False,
         cpu_workers: Optional[int] = None,
-        max_tokens_per_batch: int = 8192,
-        max_queued_seqs: Optional[int] = None,
+        max_batch_size: int = 4096,
+        max_queue_size: int = 128,
+        adaptive_fast: bool = False,
         _print_output: bool = True,
-    ) -> Dict[str, List[DomainTuple]]:
+        _show_progress: Optional[bool] = None,
+    ) -> None:
         from psalm.fast_scan import FastWorkerPoolManager, scan_fasta_fast
 
         worker_pool_manager = getattr(self, "_fast_worker_pool_manager", None)
@@ -1227,9 +1300,11 @@ class PSALM(nn.Module):
             to_txt=to_txt,
             sort=sort,
             cpu_workers=cpu_workers,
-            max_tokens_per_batch=max_tokens_per_batch,
-            max_queued_seqs=max_queued_seqs,
+            max_batch_size=max_batch_size,
+            max_queue_size=max_queue_size,
+            adaptive_fast=adaptive_fast,
             _print_output=_print_output,
+            _show_progress=_show_progress,
             _worker_pool_manager=worker_pool_manager,
             _status_callback=getattr(self, "_fast_worker_status_callback", None),
         )

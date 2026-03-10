@@ -17,6 +17,8 @@ from psalm.terminal_ui import (
 )
 
 DEFAULT_MODEL_NAME = "ProteinSequenceAnnotation/PSALM-2"
+DEFAULT_FAST_MAX_BATCH_SIZE = 4096
+DEFAULT_FAST_MAX_QUEUE_SIZE = 128
 
 
 class _HelpFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawTextHelpFormatter):
@@ -54,6 +56,10 @@ def _format_model_source(source: str | None) -> str:
         "hf_download": "Hugging Face download",
     }
     return mapping.get(str(source), str(source))
+
+
+def _uses_fast_mode(args: argparse.Namespace) -> bool:
+    return bool(args.fasta is not None and not getattr(args, "serial", False) and not args.verbose)
 
 
 def add_scan_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -137,14 +143,19 @@ def add_scan_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentPars
         "-q",
         action="store_true",
         dest="quiet",
-        help="Suppress scan result output in the terminal. Startup and status messages still print.",
+        help="Suppress scan result output in the terminal. Startup and status messages still print, and multi-sequence scans still show their progress bar.",
     )
 
     fast_group = parser.add_argument_group("fast scan")
     fast_group.add_argument(
         "--fast",
         action="store_true",
-        help="Enable batched FASTA scanning with CPU decode helpers.",
+        help="Use batched FASTA scanning with optional CPU decode helpers. This is the default for FASTA input unless --serial is passed.",
+    )
+    fast_group.add_argument(
+        "--serial",
+        action="store_true",
+        help="Use the legacy serial FASTA scan path instead of the default fast batching.",
     )
     fast_group.add_argument(
         "--sort",
@@ -158,27 +169,28 @@ def add_scan_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentPars
         default=None,
         metavar="N",
         help=(
-            "Target number of CPU decode helpers for --fast. "
-            "If omitted, fast mode decodes in the main process unless the shell already has a warmed worker pool. "
-            "Use 0 to force main-process decode."
+            "Number of CPU decode helper processes for fast FASTA scans. "
+            "Default behavior is equivalent to 0 unless reusing an existing warmed shell pool."
         ),
     )
     fast_group.add_argument(
-        "--max-tokens-per-batch",
+        "--max-batch-size",
         type=int,
-        default=8192,
+        default=DEFAULT_FAST_MAX_BATCH_SIZE,
         metavar="TOKENS",
-        help="Pad-aware token budget for each embedding batch in --fast mode.",
+        help="Maximum fast-mode embedding batch size budget in tokens/amino acids.",
     )
     fast_group.add_argument(
-        "--max-queued-seqs",
+        "--max-queue-size",
         type=int,
-        default=None,
+        default=DEFAULT_FAST_MAX_QUEUE_SIZE,
         metavar="N",
-        help=(
-            "Pause embedding when more than N sequences are queued for CPU decode. "
-            "Defaults to 10x CPU workers."
-        ),
+        help="Maximum fast-mode decode queue size in sequences.",
+    )
+    fast_group.add_argument(
+        "--adaptive-fast",
+        action="store_true",
+        help=argparse.SUPPRESS,
     )
     return parser
 
@@ -196,22 +208,31 @@ def validate_scan_args(args: argparse.Namespace, parser: Optional[argparse.Argum
             "Provide exactly one of -s or -f (not both). "
             "Try `psalm-scan -h` for usage and examples."
         )
+    if args.fast and args.serial:
+        _fail("Choose at most one of `--fast` or `--serial`.")
     if args.fast and args.sequence is not None:
         _fail("`--fast` requires `-f/--fasta` input and does not support `-s/--sequence`.")
+    if args.serial and args.sequence is not None:
+        _fail("`--serial` is only available with `-f/--fasta`.")
     if args.fast and args.verbose:
         _fail("`--fast` matches the non-verbose report only. Omit `-v/--verbose`.")
     if args.cpu_workers is not None and args.cpu_workers < 0:
         _fail("`--cpu-workers` must be >= 0.")
-    if not args.fast and args.sort:
-        _fail("`--sort` is only available with `--fast`.")
-    if not args.fast and args.cpu_workers is not None:
-        _fail("`--cpu-workers` is only available with `--fast`.")
-    if not args.fast and args.max_tokens_per_batch != 8192:
-        _fail("`--max-tokens-per-batch` is only available with `--fast`.")
-    if args.max_queued_seqs is not None and args.max_queued_seqs <= 0:
-        _fail("`--max-queued-seqs` must be > 0.")
-    if not args.fast and args.max_queued_seqs is not None:
-        _fail("`--max-queued-seqs` is only available with `--fast`.")
+    uses_fast_mode = _uses_fast_mode(args)
+    if not uses_fast_mode and args.sort:
+        _fail("`--sort` is only available with fast FASTA scans.")
+    if not uses_fast_mode and args.cpu_workers is not None:
+        _fail("`--cpu-workers` is only available with fast FASTA scans.")
+    if args.max_batch_size <= 0:
+        _fail("`--max-batch-size` must be > 0.")
+    if not uses_fast_mode and args.max_batch_size != DEFAULT_FAST_MAX_BATCH_SIZE:
+        _fail("`--max-batch-size` is only available with fast FASTA scans.")
+    if args.max_queue_size <= 0:
+        _fail("`--max-queue-size` must be > 0.")
+    if not uses_fast_mode and args.max_queue_size != DEFAULT_FAST_MAX_QUEUE_SIZE:
+        _fail("`--max-queue-size` is only available with fast FASTA scans.")
+    if not uses_fast_mode and getattr(args, "adaptive_fast", False):
+        _fail("`--adaptive-fast` is only available with fast FASTA scans.")
 
 
 def build_scan_parser(
@@ -231,9 +252,10 @@ def build_scan_parser(
             "Examples:\n"
             "  scan -s MSTNPKPQRIT...\n"
             "  scan -f path/to/proteins.fa\n"
-            "  scan --fast --sort -f path/to/proteins.fa -c 4 --max-queued-seqs 40\n"
+            "  scan --sort -f path/to/proteins.fa -c 4 --max-queue-size 128\n"
             "  scan -f path/to/proteins.fa -E 1e-3 -v\n"
-            "  scan -q --fast -f path/to/proteins.fa --to-tsv hits.tsv\n"
+            "  scan -q -f path/to/proteins.fa --to-tsv hits.tsv\n"
+            "  scan --serial -f path/to/proteins.fa\n"
             "  scan -f path/to/proteins.fa --to-tsv hits.tsv --to-txt report.txt\n"
             "  scan -f path/to/proteins.fa -T 0.20 -b 128"
         ),
@@ -244,7 +266,12 @@ def build_scan_parser(
     return parser
 
 
-def load_model_with_startup(*, model_name: str, device: str) -> PSALM:
+def load_model_with_startup(
+    *,
+    model_name: str,
+    device: str,
+    extra_setup_callback=None,
+) -> PSALM:
     _print_startup_banner()
     print(section_header("LOADING"), flush=True)
     print(
@@ -288,6 +315,13 @@ def load_model_with_startup(*, model_name: str, device: str) -> PSALM:
             "   " + kv_line("Source:", model_source, label_width=18, width=TERMINAL_WIDTH - 3),
             flush=True,
         )
+    if extra_setup_callback is not None:
+        setup_messages: list[str] = []
+        extra_setup_callback(model, setup_messages.append)
+        if setup_messages:
+            print(section_header("FAST WORKERS"), flush=True)
+            for msg in setup_messages:
+                print(f"   {msg}", flush=True)
     if not getattr(model, "warmup_executed", False):
         if not warming_section_printed:
             print(section_header("WARMING UP"), flush=True)
@@ -299,7 +333,7 @@ def load_model_with_startup(*, model_name: str, device: str) -> PSALM:
 
 
 def run_scan_from_args(model: PSALM, args: argparse.Namespace):
-    if args.fast:
+    if _uses_fast_mode(args):
         return model.scan_fast(
             fasta=args.fasta,
             score_thresh=args.score_thresh,
@@ -311,9 +345,11 @@ def run_scan_from_args(model: PSALM, args: argparse.Namespace):
             to_txt=args.to_txt,
             sort=args.sort,
             cpu_workers=args.cpu_workers,
-            max_tokens_per_batch=args.max_tokens_per_batch,
-            max_queued_seqs=args.max_queued_seqs,
+            max_batch_size=args.max_batch_size,
+            max_queue_size=args.max_queue_size,
+            adaptive_fast=args.adaptive_fast,
             _print_output=(not args.quiet),
+            _show_progress=True,
         )
     return model.scan(
         sequence=args.sequence,
@@ -342,7 +378,8 @@ def build_parser() -> argparse.ArgumentParser:
             "  psalm-scan -v -f Q09870.fa --to-tsv out.tsv\n"
             "  psalm-scan -q --no-refine -f Q09870.fa\n"
             "  psalm-scan -f Q09870.fa -E 1e-3 -T 0.20\n"
-            "  psalm-scan --fast --sort -f proteins.fa -c 4 --max-queued-seqs 40\n"
+            "  psalm-scan --sort -f proteins.fa -c 4 --max-queue-size 128\n"
+            "  psalm-scan --serial -f proteins.fa\n"
             "  psalm -d auto\n"
             "  psalm -d auto -c 4\n"
             "  psalm help"

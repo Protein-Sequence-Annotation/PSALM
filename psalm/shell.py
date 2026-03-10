@@ -39,8 +39,8 @@ def _build_main_parser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help=(
-            "Pre-create and warm this many persistent fast decode workers for the shell. "
-            "If omitted, no fast worker pool is created until a later `scan --fast ... -c/--cpu-workers` request."
+            "Pre-create and warm this many persistent fast decode helper processes for the shell. "
+            "Default behavior is equivalent to 0; no persistent worker pool is created until a later fast scan requests one."
         ),
     )
     parser.add_argument(
@@ -103,10 +103,20 @@ def main() -> None:
         print("startup error: --cpu-workers must be >= 0")
         return
 
+    pool_manager = None
+
+    def _startup_fast_worker_setup(model, printer) -> None:
+        nonlocal pool_manager
+        if args.cpu_workers is None or args.cpu_workers <= 0:
+            return
+        pool_manager = FastWorkerPoolManager(model)
+        pool_manager.ensure_size(args.cpu_workers, status_callback=printer)
+
     try:
         model = load_model_with_startup(
             model_name=args.model_name,
             device=args.device,
+            extra_setup_callback=_startup_fast_worker_setup,
         )
     except KeyboardInterrupt:
         print("\nStartup cancelled.")
@@ -115,19 +125,10 @@ def main() -> None:
         print(f"startup error: {exc}")
         return
 
-    pool_manager = None
     model._fast_shell_mode = True
     model._fast_worker_status_callback = _shell_status_callback
-    if args.cpu_workers is not None:
-        try:
-            pool_manager = FastWorkerPoolManager(model)
-            pool_manager.ensure_size(args.cpu_workers, status_callback=_shell_status_callback)
-            model._fast_worker_pool_manager = pool_manager
-        except Exception as exc:
-            print(f"startup error: {exc}")
-            if pool_manager is not None:
-                pool_manager.close()
-            return
+    if pool_manager is not None:
+        model._fast_worker_pool_manager = pool_manager
 
     scan_parser = build_scan_parser(prog="scan", add_help=True, exit_on_error=False)
     try:
@@ -180,6 +181,16 @@ def main() -> None:
             try:
                 run_scan_from_args(model, scan_args)
             except KeyboardInterrupt:
+                manager = getattr(model, "_fast_worker_pool_manager", None)
+                if manager is not None:
+                    desired_workers = manager.target_size
+                    manager.close()
+                    if desired_workers > 0:
+                        replacement = FastWorkerPoolManager(model)
+                        replacement.target_size = desired_workers
+                        model._fast_worker_pool_manager = replacement
+                    else:
+                        model._fast_worker_pool_manager = None
                 print("\nscan cancelled")
             except Exception as exc:
                 print(f"scan error: {exc}")

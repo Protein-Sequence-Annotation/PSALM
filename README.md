@@ -22,7 +22,7 @@ Persistent session mode (load model once, scan many times):
 psalm -d auto
 # inside shell:
 #   scan -f path/to/seqs.fa
-#   scan --fast --sort -f path/to/seqs.fa -c 4 --to-tsv hits.tsv
+#   scan --sort -f path/to/seqs.fa -c 4 --to-tsv hits.tsv
 #   scan -s "MSTNPKPQR..."
 #   quit
 ```
@@ -35,13 +35,19 @@ psalm-scan -f path/to/your_sequence.fasta
 CLI behavior notes:
 - Default model: `ProteinSequenceAnnotation/PSALM-2`
 - Default device: `auto` (`cuda` -> `mps` -> `cpu`)
-- `--fast` runs batched FASTA scanning and is most useful for multi-sequence FASTA input
-- `-c/--cpu-workers` controls fast-mode CPU decode helpers
-  - if omitted for a one-shot fast scan, decoding stays in the main process
-  - if the interactive shell was started with `-c`, later fast scans reuse that warmed worker pool
+- FASTA scans use fast batched scanning by default
+- `--serial` restores the legacy serial FASTA behavior
+- `--sort` remains opt-in
+- `-c/--cpu-workers` is the number of fast-mode CPU decode helper processes
+  - default behavior is equivalent to `-c 0`
+  - if the interactive shell already has warmed workers, later default fast scans reuse that pool
+- `--max-batch-size` controls the fast-mode embedding batch budget in tokens/amino acids
+- `--max-queue-size` controls the fast-mode decode queue in sequences
+  - default: `128`
 - `-q/--quiet` suppresses scan result output only; startup/status still prints
 - `--to-tsv` and `--to-txt` work for single or multi-sequence FASTA
 - `-v/--verbose` enables detailed alignment and model tables
+  - verbose FASTA scans use the serial path
   - without `-v`, PSALM prints the compact HITS report
 - `-E` keeps domains with `E-value <= threshold` (default: `0.01`)
 - `-Z` sets dataset size for E-value scaling
@@ -59,14 +65,14 @@ Fast shell usage with workers pre-warmed at startup:
 ```
 psalm -c 4
 # inside shell
-scan --fast --sort -f path/to/seqs.fa --to-tsv hits.tsv
+scan --sort -f path/to/seqs.fa --to-tsv hits.tsv
 ```
 
 Fast shell usage without pre-warming:
 ```
 psalm -d auto
 # inside shell
-scan --fast --sort -f path/to/seqs.fa -c 4 --to-tsv hits.tsv
+scan --sort -f path/to/seqs.fa -c 4 --to-tsv hits.tsv
 ```
 
 Useful output modes:
@@ -75,10 +81,13 @@ Useful output modes:
 scan -f path/to/seqs.fa --to-tsv hits.tsv
 
 # fast mode with TSV only
-scan -q --fast --sort -f path/to/seqs.fa --to-tsv hits.tsv
+scan -q --sort -f path/to/seqs.fa --to-tsv hits.tsv
 
 # verbose per-domain output
 scan -v -f path/to/seqs.fa
+
+# explicit legacy serial FASTA mode
+scan --serial -f path/to/seqs.fa
 ```
 
 For the full option set, run `psalm --help`, `psalm-scan --help`, or `scan --help`.
@@ -95,7 +104,7 @@ python -m pip install --upgrade pip
 # Apple Silicon (MPS):
 python -m pip install torch
 
-# CPU-only (Linux/Windows/macOS):
+# CPU-only (Linux/Windows):
 # python -m pip install torch
 
 # NVIDIA CUDA 12.1:
@@ -105,11 +114,24 @@ python -m pip install torch
 # 2) Install PSALM
 python -m pip install --index-url https://test.pypi.org/simple/ \
   --extra-index-url https://pypi.org/simple \
-  protein-sequence-annotation==2.1.3
+  protein-sequence-annotation==2.1.8
 ```
 
 If you are unsure which PyTorch command matches your GPU/driver, use the official selector:
 https://pytorch.org/get-started/locally/
+
+Intel Mac (x86_64) tested path:
+```
+conda create -n psalm python=3.10 -y
+conda activate psalm
+
+conda install -y -c conda-forge "llvmlite=0.44.*" "numba=0.61.*"
+conda install -y -c conda-forge "pytorch=2.5" torchvision torchaudio
+
+python -m pip install --index-url https://test.pypi.org/simple/ \
+  --extra-index-url https://pypi.org/simple \
+  protein-sequence-annotation==2.1.8
+```
 
 Optional: run without activating conda manually:
 ```
