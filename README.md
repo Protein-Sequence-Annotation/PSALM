@@ -49,7 +49,8 @@ CLI behavior notes:
 - `-v/--verbose` enables detailed alignment and model tables
   - verbose FASTA scans use the serial path
   - without `-v`, PSALM prints the compact HITS report
-- `-E` keeps domains with `E-value <= threshold` (default: `0.01`)
+- `-T` keeps domains with `Score >= threshold` (default: `0.5`)
+- `-E` keeps domains with `E-value <= threshold` (default: `0.1`)
 - `-Z` sets dataset size for E-value scaling
   - if omitted for `-s`: `Z=1`
   - if omitted for `-f`: `Z=#sequences in FASTA`
@@ -114,7 +115,7 @@ python -m pip install torch
 # 2) Install PSALM
 python -m pip install --index-url https://test.pypi.org/simple/ \
   --extra-index-url https://pypi.org/simple \
-  protein-sequence-annotation==2.1.8
+  protein-sequence-annotation==2.1.9
 ```
 
 If you are unsure which PyTorch command matches your GPU/driver, use the official selector:
@@ -130,7 +131,7 @@ conda install -y -c conda-forge "pytorch=2.5" torchvision torchaudio
 
 python -m pip install --index-url https://test.pypi.org/simple/ \
   --extra-index-url https://pypi.org/simple \
-  protein-sequence-annotation==2.1.8
+  protein-sequence-annotation==2.1.9
 ```
 
 Optional: run without activating conda manually:

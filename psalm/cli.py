@@ -83,7 +83,7 @@ def add_scan_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentPars
     scoring_group.add_argument(
         "-T",
         type=float,
-        default=0.0,
+        default=0.5,
         metavar="SCORE",
         dest="score_thresh",
         help="Minimum CBM score required to keep a domain hit.",
@@ -107,7 +107,7 @@ def add_scan_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentPars
     scoring_group.add_argument(
         "-E",
         type=float,
-        default=0.01,
+        default=0.1,
         metavar="EVALUE",
         dest="evalue_thresh",
         help="Keep only domains with E-value less than or equal to this threshold.",
