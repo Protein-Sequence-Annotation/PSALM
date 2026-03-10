@@ -474,14 +474,11 @@ def subset_for_families(
     to_e   = remap_arr[to_all[mask_e]]
     lp_e   = lp_all[mask_e]
 
-    starts_full = remap_arr[role_map['start']]    # map all full→sub, yields -1 for dropped
-    starts_full = starts_full[starts_full >= 0]     # keep only valid sub-indices
-
-    middles_full = remap_arr[role_map['middle']]
-    middles_full = middles_full[middles_full >= 0]
-
-    stops_full = remap_arr[role_map['stop']]
-    stops_full = stops_full[stops_full >= 0]
+    # Keep these in full-state space for smooth_transitions(), which uses
+    # full-space metadata/edges and remaps to sub-space internally.
+    starts_full = role_map['start'][keep_mask[role_map['start']]]
+    middles_full = role_map['middle'][keep_mask[role_map['middle']]]
+    stops_full = role_map['stop'][keep_mask[role_map['stop']]]
 
     # 4) prepare sub-role arrays
     starts_sub  = np.array(remap_arr[ role_map['start'][ keep_mask[ role_map['start'] ] ] ])
