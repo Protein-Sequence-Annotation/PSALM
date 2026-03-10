@@ -113,9 +113,7 @@ python -m pip install torch
 #   torch
 
 # 2) Install PSALM
-python -m pip install --index-url https://test.pypi.org/simple/ \
-  --extra-index-url https://pypi.org/simple \
-  protein-sequence-annotation==2.1.9
+python -m pip install protein-sequence-annotation==2.1.9
 ```
 
 If you are unsure which PyTorch command matches your GPU/driver, use the official selector:
@@ -129,9 +127,7 @@ conda activate psalm
 conda install -y -c conda-forge "llvmlite=0.44.*" "numba=0.61.*"
 conda install -y -c conda-forge "pytorch=2.5" torchvision torchaudio
 
-python -m pip install --index-url https://test.pypi.org/simple/ \
-  --extra-index-url https://pypi.org/simple \
-  protein-sequence-annotation==2.1.9
+python -m pip install protein-sequence-annotation==2.1.9
 ```
 
 Optional: run without activating conda manually:
